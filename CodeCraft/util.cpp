@@ -86,12 +86,12 @@ int16_t Util::WriteFile(const ResData * path)
 		return -1;
 	}
 	if (path == nullptr)
-		fprintf(fp, "NA");
+		fprintf(fp, "NA\n");
 	else
 	{
 		printf("write ans cost %3d with %3d links at %lldms\n", path->cost, path->count, GetElapse());
 		for (int a = 0; a < path->count; a++)
-			fprintf(fp, path->count - a == 1 ? "%d" : "%d|", path->idLink[a]);
+			fprintf(fp, path->count - a == 1 ? "%d\n" : "%d|", path->idLink[a]);
 		if (isChk)
 		{
 			//check answer

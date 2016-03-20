@@ -3,9 +3,8 @@
 #include <cstdio>
 #include <cstdint>
 #include <cstring>
-#include <chrono>
 #include <algorithm>
-
+#include <chrono>
 #define SSE
 
 #if defined(SSE)

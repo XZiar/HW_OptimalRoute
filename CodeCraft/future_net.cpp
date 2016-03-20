@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 	bool isDebug = false,
 		isStay = false;
 	string fn_topo(argv[1]), fn_dmd(argv[2]), fn_out(argv[3]);
-	
+#ifndef FIN
 	for (int a = 4; a < argc; a++)
 	{
 		if (strcmp(argv[a], "debug") == 0)
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 			fn_out = argv[a] + fn_out;
 		}
 	}
-
+#endif
 	const char * fn1 = fn_topo.c_str(),
 		* fn2 = fn_dmd.c_str(),
 		* fn3 = fn_out.c_str();
