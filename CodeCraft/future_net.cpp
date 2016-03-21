@@ -9,7 +9,8 @@ static Searcher searcher;
 int main(int argc, char *argv[])
 {
 	bool isDebug = false,
-		isStay = false;
+		isStay = false,
+		isMore = false;
 	string fn_topo(argv[1]), fn_dmd(argv[2]), fn_out(argv[3]);
 #ifndef FIN
 	for (int a = 4; a < argc; a++)
@@ -20,6 +21,8 @@ int main(int argc, char *argv[])
 			Util::isChk = true;
 		else if (strcmp(argv[a], "stay") == 0)
 			isStay = true;
+		else if (strcmp(argv[a], "more") == 0)
+			isMore = true;
 		else
 		{
 			fn_topo = argv[a] + fn_topo;
@@ -81,9 +84,18 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+	if(!isMore)
+		searcher.StepLess();
+	else
+	{
+		width = dmdnum * dmdnum * 2;
+		width = min(width, 5000);
+		printf("Try width %d\n", width);
+		searcher.Step2(2, width);
+		printf("Second Cost: %lld ms\n", Util::GetElapse());
 
-	searcher.Step2();
-	printf("Second Cost: %lld ms\n", Util::GetElapse());
+		searcher.StepMore();
+	}
 
 	printf("Totol: %lld ms\n", Util::GetElapse());
 	if(isStay)

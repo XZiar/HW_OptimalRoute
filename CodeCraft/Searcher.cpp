@@ -25,7 +25,7 @@ void PMap::Merge(const PMap & left, const PMap & right)
 }
 bool PMap::Test(uint16_t id) const
 {
-	return datB[id >> 3] & mask[id & 0x7];
+	return (datB[id >> 3] & mask[id & 0x7]) != 0x0;
 }
 bool PMap::Test(const PMap & right) const
 {
@@ -56,6 +56,16 @@ void PathData::Clean()
 	cost = cnt = 0;
 }
 
+void PathData::Merge(const PathData & left, const PathData & right)
+{
+	from = left.from, to = right.to;
+	cost = left.cost + right.cost;
+	cnt = left.cnt + right.cnt;
+	memcpy(mid, left.mid, sizeof(uint16_t)*left.cnt);
+	memcpy(mid + left.cnt, right.mid, sizeof(uint16_t)*right.cnt);
+	pmap.Merge(left.pmap, right.pmap);
+}
+
 void PathData::Set(uint16_t id, bool type)
 {
 	if (type)
@@ -74,13 +84,11 @@ bool PathData::Test(uint16_t id) const
 
 Searcher::Searcher()
 {
-	//path1 = new PathFirst[600];
 }
 
 
 Searcher::~Searcher()
 {
-	//delete path1;
 }
 
 
@@ -106,7 +114,7 @@ void Searcher::fastDFS(uint16_t curID)
 		if (pmain.Test(thisID))//reach need-point
 		{
 			curPath.cost += p.out[a].dis;//add cost
-			curPath.weight = curPath.cost;
+			//curPath.weight = curPath.cost;
 			//curPath.weight = curPath.cost * maxlevel / (curLoop * 1.0f);
 			curPath.mid[curPath.cnt++] = p.out[a].rid;//add go though
 			curPath.Set(thisID, true);//set bitmap
@@ -152,11 +160,10 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 {
 	maxlevel = maxdepth;
 	maxwide = maxwidth;
-	path2.endcnt = 0;
+	pather.endcnt = 0;
 	for (int a = 0; a <= demand.count; a++)
 	{
 		curPit = path1[demand.idNeed[a]] = &paths1[a];
-		//curPit = &path1[demand.idNeed[a]];
 
 		curPath.Clean();
 		//curPath.Set(demand.idNeed[a], true);
@@ -168,7 +175,7 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 				if (curPit->paths[b].to == pmain.to)
 				{
 					curPit->hasEnd = true;
-					++path2.endcnt;
+					++pather.endcnt;
 					break;
 				}
 		sort(curPit->paths, curPit->paths + curPit->cnt);
@@ -176,27 +183,27 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 }
 
 
-void Searcher::fastDFS2(PathFirst &pf)
+void Searcher::fastDFSless(PathFirst &pf)
 {
+	uint16_t lastCost = pather.minCost - pather.curCost;
 	for (uint8_t a = 0; a < pf.cnt; a++)
 	{
 		PathData &p = pf.paths[a];
-		if (path2.minCost - path2.curCost <= p.cost)//cost too much
+		if (lastCost <= p.cost)//cost too much
 			break;//according to order, later ones cost more
-		uint16_t &thisID = p.to;
-		if (!path2.pmap[path2.cnt].Test(p.pmap))//has overlap points
+		if (!pather.pmap[pather.cnt].Test(p.pmap))//has overlap points
 			continue;
+		uint16_t &thisID = p.to;
 		if (thisID == pmain.to)
 		{
-			if(path2.cnt < demand.count)//can't go to dest now
+			if(pather.cnt < demand.count)//can't go to dest now
 				continue;
 			//final step,find a shorter route
-			path2.minCost = path2.curCost + p.cost;
-			path2.pstack[path2.cnt++] = &p;
-			//printf("find result cost %3d at %lld\n", path2.curCost + p.cost, Util::GetElapse());
-			//TODO:find new answer!
+			pather.minCost = pather.curCost + p.cost;
+			pather.pstack[pather.cnt++] = &p;
+
 			FormRes();
-			path2.cnt--;//rollback go though
+			pather.cnt--;//rollback go though
 			continue;
 		}
 		else//reach next point
@@ -204,24 +211,24 @@ void Searcher::fastDFS2(PathFirst &pf)
 			PathFirst &npf = *path1[p.to];
 			if (npf.hasEnd)
 			{
-				if (path2.endcnt == 1 && path2.cnt + 1 < demand.count)//can't go to dest now
+				if (pather.endcnt == 1 && pather.cnt + 1 < demand.count)//no way to dest now
 					continue;
-				path2.endcnt--;
+				pather.endcnt--;
 			}
-			path2.curCost += p.cost;//add cost
-			path2.pmap[path2.cnt + 1].Merge(path2.pmap[path2.cnt], p.pmap);
-			path2.pstack[path2.cnt++] = &p;//add go though
+			pather.curCost += p.cost;//add cost
+			pather.pmap[pather.cnt + 1].Merge(pather.pmap[pather.cnt], p.pmap);
+			pather.pstack[pather.cnt++] = &p;//add go though
 
-			/*if (path2.cnt < demand.count - 13)
-				printf("@@@ %d here at %dth when %lld\n", path2.cnt, a, Util::GetElapse());*/
+			if (pather.cnt < demand.count - 13)
+				printf("@@@ %d here at %dth when %lld\n", pather.cnt, a, Util::GetElapse());
 
-			fastDFS2(npf);
+			fastDFSless(npf);
 
-			path2.cnt--;//rollback go though
-			path2.curCost -= p.cost;//rollback cost
+			pather.cnt--;//rollback go though
+			pather.curCost -= p.cost;//rollback cost
 
 			if (npf.hasEnd)
-				path2.endcnt++;
+				pather.endcnt++;
 			continue;
 		}
 	}
@@ -233,22 +240,137 @@ void Searcher::fastDFS2(PathFirst &pf)
 void Searcher::FormRes()
 {
 	ResData res = ResData();
-	for (int a = 0; a < path2.cnt; a++)
+	for (int a = 0; a < pather.cnt; a++)
 	{
-		PathData &p = *path2.pstack[a];
+		PathData &p = *pather.pstack[a];
 		for (int b = 0; b < p.cnt; b++)
 		{
 			res.idLink[res.count++] = p.mid[b];
 		}
 	}
-	res.cost = path2.minCost;
+	res.cost = pather.minCost;
 	Util::WriteFile(&res);
 }
 
-void Searcher::Step2()
+void Searcher::StepLess()
 {
-	path2.cnt = 0;
-	fastDFS2(*path1[pmain.from]);
+	pather.cnt = 0;
+	fastDFSless(*path1[pmain.from]);
 }
 
+void Searcher::Step2(uint8_t step, uint16_t maxwidth)
+{
+	//maxwide = maxwidth;
+	pather.endcnt = 0;
+	bool isOneStep = !(demand.count & 0x1);
+	for (int a = 0; a <= demand.count; a++)
+	{
+		path2[demand.idNeed[a]] = &paths2[a];
+		PathSecond &ps = paths2[a];
+		PathFirst &pf = paths1[a];
+		ps.from = demand.idNeed[a];
 
+		for (int b = 0; b < pf.cnt; b++)
+		{
+			PathData & pd1 = pf.paths[b];
+			if (pd1.to == pmain.to)// to end
+			{
+				if(isOneStep)//need last one step
+					ps.endpaths[ps.endcnt++] = pd1;
+				continue;
+			}
+			// not to the end
+			PathFirst &pfnxt = *path1[pd1.to];
+			for (int c = 0; c < pfnxt.cnt; c++)
+			{
+				PathData & pd2 = pfnxt.paths[c];
+				if (pd2.to == pf.from)//cycle
+					continue;
+				if (pd2.to == pmain.to)// to end
+				{
+					if (!isOneStep)//need two to the end, satify
+						ps.endpaths[ps.endcnt++].Merge(pd1, pd2);
+					continue;
+				}
+				else if (pd1.pmap.Test(pd2.pmap))
+				{
+					//no overlap points
+					uint16_t newcost = pd1.cost + pd2.cost;
+					if (ps.cnt < maxwidth)//has space
+					{
+						ps.paths[ps.cnt++].Merge(pd1, pd2);//add path
+						ps.maxcost = max(ps.maxcost, newcost);//refresh max-cost
+					}
+					else if(newcost < ps.maxcost)
+					{//full,but cost lower
+						sort(ps.paths, ps.paths + maxwidth);//sort to find out the longest
+						ps.paths[maxwidth - 1].Merge(pd1, pd2);//replace
+						ps.maxcost = max(newcost, ps.paths[maxwidth - 2].cost);//refresh max-cost
+					}
+				}
+				//end of finding in 2th
+			}
+			//end of  finding in 1th
+		}
+		sort(ps.paths, ps.paths + ps.cnt);
+		//printf("%d,%d\n", ps.cnt,ps.endcnt);
+	}
+}
+
+void Searcher::fastDFSmore(PathSecond &ps)
+{
+	if (pather.cnt < pather.cntlim)//can't go to dest now
+	{
+		if (pather.cntlim - pather.cnt > 4)
+			printf("%d\n", pather.cnt);
+		for (uint16_t a = 0; a < ps.cnt; a++)
+		{
+			PathData &p = ps.paths[a];
+			if (pather.minCost - pather.curCost <= p.cost)//cost too much
+				break;//according to order, later ones cost more
+			if (!pather.pmap[pather.cnt].Test(p.pmap))//has overlap points
+				continue;
+			uint16_t &thisID = p.to;
+
+			//to next second-points
+			PathSecond &nps = *path2[p.to];
+
+			pather.curCost += p.cost;//add cost
+			pather.pmap[pather.cnt + 1].Merge(pather.pmap[pather.cnt], p.pmap);
+			pather.pstack[pather.cnt++] = &p;//add go though
+
+			fastDFSmore(nps);
+
+			pather.cnt--;//rollback go though
+			pather.curCost -= p.cost;//rollback cost
+		}
+		//finish this point
+	}
+	else//to dest
+	{
+		for (uint16_t a = 0; a < ps.endcnt; a++)
+		{
+			PathData &p = ps.endpaths[a];
+			if (pather.minCost - pather.curCost <= p.cost)//cost too much
+				break;//according to order, later ones cost more
+			if (!pather.pmap[pather.cnt].Test(p.pmap))//has overlap points
+				continue;
+			uint16_t &thisID = p.to;
+			//final step,find a shorter route
+			pather.minCost = pather.curCost + p.cost;
+			pather.pstack[pather.cnt++] = &p;
+
+			FormRes();
+
+			pather.cnt--;//rollback go though
+		}
+	}
+	return;
+}
+
+void Searcher::StepMore()
+{
+	pather.cnt = 0;
+	pather.cntlim = demand.count / 2;
+	fastDFSmore(*path2[pmain.from]);
+}

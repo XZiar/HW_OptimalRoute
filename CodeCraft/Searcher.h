@@ -23,25 +23,26 @@ struct PMap
 struct PathData
 {
 	PMap pmap;
-	float weight = 0.0f;
+	//float weight = 0.0f;
 	uint16_t from,
 		to,
 		cost,
 		cnt,
-		mid[80];
+		mid[32];
 
 	PathData();
 	void Clean();
+	void Merge(const PathData & left, const PathData & right);
 	void Set(const uint16_t id, const bool type);
 	bool Test(const uint16_t id) const;
 
 	bool operator<(const PathData &pd) const
 	{
-		return weight < pd.weight;
+		return cost < pd.cost;
 	}
 	bool operator>(const PathData &pd) const
 	{
-		return weight > pd.weight;
+		return cost > pd.cost;
 	}
 };
 //auto spd = sizeof(PathData);
@@ -53,32 +54,45 @@ private:
 public:
 	struct PathFirst
 	{
-//#define MAX_PATH_FIRST 22
-		PathData paths[128];
+		PathData paths[95];
 		uint16_t from,
 			maxcost = 0;
 		uint8_t cnt = 0;
 		bool hasEnd = false;
-	}paths1[56];
-
+	}paths1[52];
 	PathFirst *path1[600];
+
+	struct PathSecond
+	{
+		PathData paths[5000];
+		PathData endpaths[100];
+		uint16_t from,
+			maxcost = 0,
+			cnt = 0,
+			endcnt = 0;
+	}paths2[52];
+	PathSecond *path2[600];
+	
 
 	uint8_t maxlevel, maxwide;
 	PathFirst * curPit;
 	PathData curPath;
 	void fastDFS(uint16_t curID);
 
-	struct PathSecond
+	struct PathLast
 	{
 		PathData *pstack[64];
 		PMap pmap[64];
 		uint16_t curCost = 0,
 			minCost = 4000;
 		uint8_t cnt = 0,
-			endcnt = 0;
-	}path2;
+			endcnt = 0,
+			cntlim = 0;
+	}pather;
 
-	void fastDFS2(PathFirst &pf);
+	void fastDFSless(PathFirst &pf);
+
+	void fastDFSmore(PathSecond &ps);
 
 	void FormRes();
 public:
@@ -90,6 +104,8 @@ public:
 
 	void Init();
 	void Step1(uint8_t maxdepth, uint8_t maxwidth);
-	void Step2();
+	void StepLess();
+	void Step2(uint8_t step, uint16_t maxwidth);
+	void StepMore();
 };
 
