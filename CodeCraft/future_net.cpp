@@ -2,6 +2,7 @@
 #include "util.h"
 #include "Searcher.h"
 #include <string>
+#include <thread>
 
 
 static Searcher searcher;
@@ -37,6 +38,15 @@ int main(int argc, char *argv[])
 
 
 	Util::Init(fn3);
+	if (!isStay)
+	{
+		thread thr = thread([]()
+		{
+			this_thread::sleep_for(chrono::milliseconds(9500));
+			exit(0);
+		});
+		thr.detach();
+	}
 
 	printf("Open topo File : %s\n", fn1);
 	int16_t linknum = Util::ReadFile(fn1, searcher.points);
@@ -64,7 +74,6 @@ int main(int argc, char *argv[])
 	searcher.Init();
 	uint16_t width;
 	width = dmdnum * 8 / 5;
-	width = max(width, 24);
 	printf("Try depth %d and width %d\n", 16, width);
 	searcher.Step1(16, width);
 	printf("First Cost: %lld ms\n", Util::GetElapse());
@@ -86,6 +95,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+	
 	//if(!isMore)
 		searcher.StepLess();
 	/*else

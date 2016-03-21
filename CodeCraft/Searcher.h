@@ -98,6 +98,7 @@ public:
 
 	void FormRes();
 public:
+	bool isRun = true;
 	PointData points[600];
 	DemandData demand;
 
