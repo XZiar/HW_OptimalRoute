@@ -62,7 +62,9 @@ int main(int argc, char *argv[])
 	printf("Loading Cost: %lld ms\n", Util::GetElapse());
 
 	searcher.Init();
-	uint16_t width = dmdnum * 8 / 5;
+	uint16_t width;
+	width = dmdnum * 8 / 5;
+	width = max(width, 24);
 	printf("Try depth %d and width %d\n", 16, width);
 	searcher.Step1(16, width);
 	printf("First Cost: %lld ms\n", Util::GetElapse());
@@ -84,9 +86,9 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	if(!isMore)
+	//if(!isMore)
 		searcher.StepLess();
-	else
+	/*else
 	{
 		width = dmdnum * dmdnum * 2;
 		width = min(width, 5000);
@@ -96,7 +98,7 @@ int main(int argc, char *argv[])
 
 		searcher.StepMore();
 	}
-
+	*/
 	printf("Totol: %lld ms\n", Util::GetElapse());
 	if(isStay)
 		getchar();

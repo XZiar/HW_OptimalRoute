@@ -38,11 +38,11 @@ struct PathData
 
 	bool operator<(const PathData &pd) const
 	{
-		return cost < pd.cost;
+		return cost == pd.cost ? cnt < pd.cnt : cost < pd.cost;
 	}
 	bool operator>(const PathData &pd) const
 	{
-		return cost > pd.cost;
+		return cost == pd.cost ? cnt > pd.cnt : cost > pd.cost;
 	}
 };
 //auto spd = sizeof(PathData);
@@ -61,7 +61,7 @@ public:
 		bool hasEnd = false;
 	}paths1[52];
 	PathFirst *path1[600];
-
+	/*
 	struct PathSecond
 	{
 		PathData paths[5000];
@@ -71,8 +71,9 @@ public:
 			cnt = 0,
 			endcnt = 0;
 	}paths2[52];
-	PathSecond *path2[600];
 	
+	PathSecond *path2[600];
+	*/
 
 	uint8_t maxlevel, maxwide;
 	PathFirst * curPit;
@@ -84,7 +85,8 @@ public:
 		PathData *pstack[64];
 		PMap pmap[64];
 		uint16_t curCost = 0,
-			minCost = 4000;
+			minCost = 4000,
+			lastCost = 4000;
 		uint8_t cnt = 0,
 			endcnt = 0,
 			cntlim = 0;
@@ -92,7 +94,7 @@ public:
 
 	void fastDFSless(PathFirst &pf);
 
-	void fastDFSmore(PathSecond &ps);
+	//void fastDFSmore(PathSecond &ps);
 
 	void FormRes();
 public:
@@ -105,7 +107,7 @@ public:
 	void Init();
 	void Step1(uint8_t maxdepth, uint8_t maxwidth);
 	void StepLess();
-	void Step2(uint8_t step, uint16_t maxwidth);
-	void StepMore();
+	//void Step2(uint8_t step, uint16_t maxwidth);
+	//void StepMore();
 };
 
