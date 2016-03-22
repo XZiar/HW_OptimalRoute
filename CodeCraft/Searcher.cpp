@@ -1,26 +1,10 @@
 #include "rely.h"
 #include "Searcher.h"
 
-const uint8_t PMap::mask[8] = { 0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1 };
+//const uint8_t PMap::mask[8] = { 0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1 };
 PMap::PMap()
 {
-#if defined(SSE)
-#   ifdef AVX
-	const __m256 dat = _mm256_setzero_ps();
-	_mm256_store_ps((float*)&datAVX[0], dat);
-	_mm256_store_ps((float*)&datAVX[1], dat);
-	_mm256_store_ps((float*)&datAVX[2], dat);
-#   else
-	const __m128i dat = _mm_setzero_si128();
-	_mm_store_si128(&datSSE[0], dat);
-	_mm_store_si128(&datSSE[1], dat);
-	_mm_store_si128(&datSSE[2], dat);
-	_mm_store_si128(&datSSE[3], dat);
-	_mm_store_si128(&datSSE[4], dat);
-#   endif
-#else
-	memset(datB, 0, sizeof(datB));
-#endif
+	Clean();
 }
 PMap::PMap(const PMap & ori)
 {
@@ -39,6 +23,26 @@ PMap::PMap(const PMap & ori)
 #else
 	memcpy(datB, ori.datB, sizeof(datB));
 #endif	
+}
+void PMap::Clean()
+{
+#if defined(SSE)
+#   ifdef AVX
+	const __m256 dat = _mm256_setzero_ps();
+	_mm256_store_ps((float*)&datAVX[0], dat);
+	_mm256_store_ps((float*)&datAVX[1], dat);
+	_mm256_store_ps((float*)&datAVX[2], dat);
+#   else
+	const __m128i dat = _mm_setzero_si128();
+	_mm_store_si128(&datSSE[0], dat);
+	_mm_store_si128(&datSSE[1], dat);
+	_mm_store_si128(&datSSE[2], dat);
+	_mm_store_si128(&datSSE[3], dat);
+	_mm_store_si128(&datSSE[4], dat);
+#   endif
+#else
+	memset(datB, 0, sizeof(datB));
+#endif
 }
 void PMap::Merge(const PMap & left, const PMap & right)
 {
@@ -118,7 +122,7 @@ PathData::PathData()
 
 void PathData::Clean()
 {
-	memset(&pmap, 0, sizeof(pmap));
+	pmap.Clean();
 	cost = cnt = 0;
 }
 
@@ -236,9 +240,12 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 
 void Searcher::fastDFSless(PathFirst &pf)
 {
-	for (uint8_t a = 0; a < pf.cnt; a++)
+	for (uint8_t a = 0; a < pf.cnt; /*a++*/)
 	{
-		PathData &p = pf.paths[a];
+		PathData &p = pf.paths[a++];
+		/*_mm_prefetch((char*)&p, _MM_HINT_NTA);
+		_mm_prefetch((char*)(&p) + 64, _MM_HINT_NTA);*/
+		
 		if (pather.lastCost <= p.cost)//cost too much
 			break;//according to order, later ones cost more
 		if (!pather.pmap[pather.cnt].Test(p.pmap))//has overlap points
@@ -276,6 +283,8 @@ void Searcher::fastDFSless(PathFirst &pf)
 				printf("@@@ %d here at %dth when %lld\n", pather.cnt, a, Util::GetElapse());
 			
 #endif
+			/*_mm_prefetch((char*)&npf.paths, _MM_HINT_NTA);
+			_mm_prefetch((char*)(&npf.paths) + 64, _MM_HINT_NTA);*/
 			fastDFSless(npf);
 
 			pather.lastCost += p.cost;//rollback lastCost

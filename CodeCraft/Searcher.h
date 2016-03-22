@@ -3,7 +3,7 @@
 
 struct _MM_ALIGN32 PMap
 {
-	static const uint8_t mask[8];
+	//static const uint8_t mask[8];
 	union
 	{
 		uint8_t datB[80];
@@ -18,21 +18,21 @@ struct _MM_ALIGN32 PMap
 
 	PMap();
 	PMap(const PMap& ori);
+	void Clean();
 	void Merge(const PMap & left, const PMap & right);
 	bool Set(const uint16_t id, bool type);
 	bool Test(const uint16_t id) const;
 	bool Test(const PMap & right) const;
 };
 
-struct PathData
+struct _MM_ALIGN32 PathData
 {
 	PMap pmap;
-	//float weight = 0.0f;
 	uint16_t from,
 		to,
 		cost,
 		cnt,
-		mid[32];
+		mid[28];
 
 	PathData();
 	void Clean();
@@ -54,9 +54,9 @@ class Searcher
 private:
 	PathData pmain;
 public:
-	struct PathFirst
+	struct _MM_ALIGN32 PathFirst
 	{
-		PathData paths[87];
+		PathData paths[83];
 		PathData endpaths[8];
 		uint16_t from,
 			maxcost = 0,
@@ -68,7 +68,7 @@ public:
 	//int kkk = sizeof(PathFirst);
 	PathFirst *path1[600];
 	/*
-	struct PathSecond
+	struct _MM_ALIGN32 PathSecond
 	{
 		PathData paths[5000];
 		PathData endpaths[100];
@@ -86,10 +86,10 @@ public:
 	PathData curPath;
 	void fastDFS(uint16_t curID);
 
-	struct PathLast
+	struct _MM_ALIGN32 PathLast
 	{
-		PathData *pstack[64];
 		PMap pmap[64];
+		PathData *pstack[64];
 		uint16_t curCost = 0,
 			minCost = 4000,
 			lastCost = 4000;
