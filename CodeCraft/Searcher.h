@@ -33,8 +33,9 @@ struct _MM_ALIGN32 PathData
 	uint16_t from,
 		to,
 		cost,
-		cnt,
 		mid[28];
+	uint8_t cnt,
+		isEnd;
 
 	PathData();
 	void Clean();
@@ -42,11 +43,12 @@ struct _MM_ALIGN32 PathData
 
 	bool operator<(const PathData &pd) const
 	{
+		//return isEnd > pd.isEnd ? true : (cost == pd.cost ? cnt < pd.cnt : cost < pd.cost);
 		return cost == pd.cost ? cnt < pd.cnt : cost < pd.cost;
 	}
 	bool operator>(const PathData &pd) const
 	{
-		return cost == pd.cost ? cnt > pd.cnt : cost > pd.cost;
+		return isEnd < pd.isEnd ? true : (cost == pd.cost ? cnt > pd.cnt : cost > pd.cost);
 	}
 };
 //auto spd = sizeof(PathData);
@@ -69,19 +71,6 @@ public:
 	}paths1[52];
 	//int kkk = sizeof(PathFirst);
 	PathFirst *path1[600];
-	/*
-	struct _MM_ALIGN32 PathSecond
-	{
-		PathData paths[5000];
-		PathData endpaths[100];
-		uint16_t from,
-			maxcost = 0,
-			cnt = 0,
-			endcnt = 0;
-	}paths2[52];
-	
-	PathSecond *path2[600];
-	*/
 
 	uint8_t maxlevel, maxwide;
 	PathFirst * curPit;
@@ -103,8 +92,6 @@ public:
 	void fastDFSless(PathFirst &pf);
 	void fastDFSlessEND(PathFirst &pf);
 
-	//void fastDFSmore(PathSecond &ps);
-
 	void FormRes();
 public:
 	bool isRun = true;
@@ -117,7 +104,5 @@ public:
 	void Init();
 	void Step1(uint8_t maxdepth, uint8_t maxwidth);
 	void StepLess();
-	//void Step2(uint8_t step, uint16_t maxwidth);
-	//void StepMore();
 };
 

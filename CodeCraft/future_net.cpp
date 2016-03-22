@@ -10,8 +10,7 @@ static Searcher searcher;
 int main(int argc, char *argv[])
 {
 	bool isDebug = false,
-		isStay = false,
-		isMore = false;
+		isStay = false;
 	string fn_topo(argv[1]), fn_dmd(argv[2]), fn_out(argv[3]);
 #ifndef FIN
 	for (int a = 4; a < argc; a++)
@@ -22,8 +21,6 @@ int main(int argc, char *argv[])
 			Util::isChk = true;
 		else if (strcmp(argv[a], "stay") == 0)
 			isStay = true;
-		else if (strcmp(argv[a], "more") == 0)
-			isMore = true;
 		else
 		{
 			fn_topo = argv[a] + fn_topo;
@@ -73,7 +70,8 @@ int main(int argc, char *argv[])
 
 	searcher.Init();
 	uint16_t width;
-	width = dmdnum * 8 / 5;
+	width = dmdnum * 3;
+	width = min(width, 80);
 	printf("Try depth %d and width %d\n", 16, width);
 	searcher.Step1(16, width);
 	printf("First Cost: %lld ms\n", Util::GetElapse());
@@ -96,19 +94,8 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	//if(!isMore)
 		searcher.StepLess();
-	/*else
-	{
-		width = dmdnum * dmdnum * 2;
-		width = min(width, 5000);
-		printf("Try width %d\n", width);
-		searcher.Step2(2, width);
-		printf("Second Cost: %lld ms\n", Util::GetElapse());
 
-		searcher.StepMore();
-	}
-	*/
 	printf("Totol: %lld ms\n", Util::GetElapse());
 	if(isStay)
 		getchar();
