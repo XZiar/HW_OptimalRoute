@@ -4,26 +4,59 @@
 const uint8_t PMap::mask[8] = { 0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1 };
 PMap::PMap()
 {
+#if defined(SSE)
+#   ifdef AVX
+	const __m256 dat = _mm256_setzero_ps();
+	_mm256_store_ps((float*)&datAVX[0], dat);
+	_mm256_store_ps((float*)&datAVX[1], dat);
+	_mm256_store_ps((float*)&datAVX[2], dat);
+#   else
 	const __m128i dat = _mm_setzero_si128();
 	_mm_store_si128(&datSSE[0], dat);
 	_mm_store_si128(&datSSE[1], dat);
 	_mm_store_si128(&datSSE[2], dat);
 	_mm_store_si128(&datSSE[3], dat);
 	_mm_store_si128(&datSSE[4], dat);
-	//memset(datB, 0, sizeof(datB));
+#   endif
+#else
+	memset(datB, 0, sizeof(datB));
+#endif
 }
 PMap::PMap(const PMap & ori)
 {
+#if defined(SSE)
+#   ifdef AVX
+	_mm256_store_ps((float*)&datAVX[0], _mm256_load_ps((float*)&ori.datAVX[0]));
+	_mm256_store_ps((float*)&datAVX[1], _mm256_load_ps((float*)&ori.datAVX[1]));
+	_mm256_store_ps((float*)&datAVX[2], _mm256_load_ps((float*)&ori.datAVX[2]));
+#   else
+	_mm_store_si128(&datSSE[0], _mm_load_si128(&ori.datSSE[0]));
+	_mm_store_si128(&datSSE[1], _mm_load_si128(&ori.datSSE[1]));
+	_mm_store_si128(&datSSE[2], _mm_load_si128(&ori.datSSE[2]));
+	_mm_store_si128(&datSSE[3], _mm_load_si128(&ori.datSSE[3]));
+	_mm_store_si128(&datSSE[4], _mm_load_si128(&ori.datSSE[4]));
+#   endif
+#else
 	memcpy(datB, ori.datB, sizeof(datB));
+#endif	
 }
 void PMap::Merge(const PMap & left, const PMap & right)
 {
 #if defined(SSE)
-	datSSE[0] = _mm_or_si128(_mm_load_si128(&left.datSSE[0]), _mm_load_si128(&right.datSSE[0]));
-	datSSE[1] = _mm_or_si128(_mm_load_si128(&left.datSSE[1]), _mm_load_si128(&right.datSSE[1]));
-	datSSE[2] = _mm_or_si128(_mm_load_si128(&left.datSSE[2]), _mm_load_si128(&right.datSSE[2]));
-	datSSE[3] = _mm_or_si128(_mm_load_si128(&left.datSSE[3]), _mm_load_si128(&right.datSSE[3]));
-	datSSE[4] = _mm_or_si128(_mm_load_si128(&left.datSSE[4]), _mm_load_si128(&right.datSSE[4]));
+#   ifdef AVX
+	__m256 t0 = _mm256_or_ps(_mm256_load_ps((float*)&left.datAVX[0]), _mm256_load_ps((float*)&right.datAVX[0])),
+		t1 = _mm256_or_ps(_mm256_load_ps((float*)&left.datAVX[1]), _mm256_load_ps((float*)&right.datAVX[1])),
+		t2 = _mm256_or_ps(_mm256_load_ps((float*)&left.datAVX[2]), _mm256_load_ps((float*)&right.datAVX[2]));
+	_mm256_store_ps((float*)&datAVX[0], t0);
+	_mm256_store_ps((float*)&datAVX[1], t1);
+	_mm256_store_ps((float*)&datAVX[2], t2);
+#   else
+	_mm_store_si128(&datSSE[0], _mm_or_si128(_mm_load_si128(&left.datSSE[0]), _mm_load_si128(&right.datSSE[0])));
+	_mm_store_si128(&datSSE[1], _mm_or_si128(_mm_load_si128(&left.datSSE[1]), _mm_load_si128(&right.datSSE[1])));
+	_mm_store_si128(&datSSE[2], _mm_or_si128(_mm_load_si128(&left.datSSE[2]), _mm_load_si128(&right.datSSE[2])));
+	_mm_store_si128(&datSSE[3], _mm_or_si128(_mm_load_si128(&left.datSSE[3]), _mm_load_si128(&right.datSSE[3])));
+	_mm_store_si128(&datSSE[4], _mm_or_si128(_mm_load_si128(&left.datSSE[4]), _mm_load_si128(&right.datSSE[4])));
+#   endif
 #else
 	for (int a = 0; a < 10; a++)
 		datL[a] = left.datL[a] | right.datL[a];
@@ -132,8 +165,6 @@ void Searcher::fastDFS(uint16_t curID)
 		if (pmain.Test(thisID))//reach need-point
 		{
 			curPath.cost += p.out[a].dis;//add cost
-			//curPath.weight = curPath.cost;
-			//curPath.weight = curPath.cost * maxlevel / (curLoop * 1.0f);
 			curPath.mid[curPath.cnt++] = p.out[a].rid;//add go though
 			curPath.Set(thisID, true);//set bitmap
 			curPath.to = thisID;//add destination

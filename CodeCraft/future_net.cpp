@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 	{
 		thread thr = thread([]()
 		{
-			this_thread::sleep_for(chrono::milliseconds(9500));
+			this_thread::sleep_for(chrono::milliseconds(14500));
 			exit(0);
 		});
 		thr.detach();
