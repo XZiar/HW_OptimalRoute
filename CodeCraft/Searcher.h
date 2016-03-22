@@ -3,7 +3,9 @@
 
 struct _MM_ALIGN32 PMap
 {
-	//static const uint8_t mask[8];
+#if defined(__GNUC__)
+	static const uint8_t mask[8];
+#endif
 	union
 	{
 		uint8_t datB[80];
@@ -20,7 +22,7 @@ struct _MM_ALIGN32 PMap
 	PMap(const PMap& ori);
 	void Clean();
 	void Merge(const PMap & left, const PMap & right);
-	bool Set(const uint16_t id, bool type);
+	void Set(const uint16_t id, bool type);
 	bool Test(const uint16_t id) const;
 	bool Test(const PMap & right) const;
 };

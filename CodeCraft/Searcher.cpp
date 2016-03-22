@@ -1,7 +1,9 @@
 #include "rely.h"
 #include "Searcher.h"
 
-//const uint8_t PMap::mask[8] = { 0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1 };
+#if defined(__GNUC__)
+const uint8_t PMap::mask[8] = { 0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1 };
+#endif
 PMap::PMap()
 {
 	Clean();
@@ -66,24 +68,28 @@ void PMap::Merge(const PMap & left, const PMap & right)
 		datL[a] = left.datL[a] | right.datL[a];
 #endif
 }
-bool PMap::Set(uint16_t id, bool type)
+void PMap::Set(uint16_t id, bool type)
 {
+#if defined(__GNUC__)
+	if (type)
+		datB[id >> 3] |= mask[id & 0x7];
+	else
+		datB[id >> 3] &= ~mask[id & 0x7];
+#else
 	long long * ptr = (long long*)&datL[id >> 6];
 	if (type)
 		_bittestandset64(ptr, id & 0x3f);
 	else
 		_bittestandreset64(ptr, id & 0x3f);
-	/*if (type)
-		datB[id >> 3] |= mask[id & 0x7];
-	else
-		datB[id >> 3] &= ~mask[id & 0x7];*/
-	return true;
+#endif
 }
 bool PMap::Test(uint16_t id) const
 {
-	long long * ptr = (long long*)&datL[id >> 6];
-	return _bittest64(ptr, id & 0x3f);
-	//return (datB[id >> 3] & mask[id & 0x7]) != 0x0;
+#if defined(__GNUC__)
+	return (datB[id >> 3] & mask[id & 0x7]) != 0x0;
+#else
+	return _bittest64((long long*)&datL[id >> 6], id & 0x3f);
+#endif
 }
 bool PMap::Test(const PMap & right) const
 {
@@ -92,9 +98,11 @@ bool PMap::Test(const PMap & right) const
 	__m256 t0 = _mm256_and_ps(_mm256_load_ps((float*)&datAVX[0]), _mm256_load_ps((float*)&right.datAVX[0])),
 		t1 = _mm256_and_ps(_mm256_load_ps((float*)&datAVX[1]), _mm256_load_ps((float*)&right.datAVX[1])),
 		t2 = _mm256_and_ps(_mm256_load_ps((float*)&datAVX[2]), _mm256_load_ps((float*)&right.datAVX[2]));
-	__m256i a0 = _mm256_castps_si256(_mm256_or_ps(t0, t1)),
-		a1 = _mm256_castps_si256(t2);
-	return (_mm256_testz_si256(a1, a1) && _mm256_testz_si256(a0, a0));
+	__m256i a0 = _mm256_castps_si256(t0);
+	if (!_mm256_testz_si256(a0, a0))
+		return false;
+	__m256i a1 = _mm256_castps_si256(_mm256_or_ps(t1, t2));
+	return  _mm256_testz_si256(a1, a1);
 #   else
 	__m128i t0 = _mm_and_si128(_mm_load_si128(&datSSE[0]), _mm_load_si128(&right.datSSE[0])),
 		t1 = _mm_and_si128(_mm_load_si128(&datSSE[1]), _mm_load_si128(&right.datSSE[1])),
@@ -240,7 +248,7 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 
 void Searcher::fastDFSless(PathFirst &pf)
 {
-	for (uint8_t a = 0; a < pf.cnt; /*a++*/)
+	for (uint8_t a = 0; a < pf.cnt;)
 	{
 		PathData &p = pf.paths[a++];
 		/*_mm_prefetch((char*)&p, _MM_HINT_NTA);
