@@ -6,7 +6,7 @@ using namespace std::chrono;
 
 char Util::outfname[256];
 uint64_t Util::t_begin;
-TOPOData Util::topo[4800];
+//TOPOData Util::topo[4800];
 bool Util::isChk = false;
 void Util::Init(const char * fname)
 {
@@ -29,9 +29,9 @@ int16_t Util::ReadFile(const char* fname, PointData * points)
 
 	int cnt = 0;
 	int idLink, idSrc, idDest, cost;
-	while (fscanf(fp, "%d,%d,%d,%d", &idLink, &idSrc, &idDest, &cost) != EOF)
+	for (; fscanf(fp, "%d,%d,%d,%d", &idLink, &idSrc, &idDest, &cost) != EOF; )
 	{
-		topo[cnt].idLink = idLink, topo[cnt].idSrc = idSrc, topo[cnt].idDest = idDest, topo[cnt].cost = cost;
+		//topo[cnt].idLink = idLink, topo[cnt].idSrc = idSrc, topo[cnt].idDest = idDest, topo[cnt].cost = cost;
 		PointData &p = points[idSrc];
 		p.id = idSrc;
 		for (int a = 0; a < p.cnt; a++)
@@ -47,7 +47,7 @@ int16_t Util::ReadFile(const char* fname, PointData * points)
 		p.out[p.cnt].dest = idDest;
 		p.out[p.cnt].dis = cost;
 		p.out[p.cnt++].rid = idLink;
-END_FIND:
+	END_FIND:
 		cnt++;
 	}
 	fclose(fp);

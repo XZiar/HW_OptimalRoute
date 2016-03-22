@@ -37,7 +37,7 @@ class Util
 {
 	static char outfname[256];
 	static uint64_t t_begin;
-	static TOPOData topo[4800];
+	//static TOPOData topo[4800];
 public:
 	static bool isChk;
 	static void Init(const char * fname);

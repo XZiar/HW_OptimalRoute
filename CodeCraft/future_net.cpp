@@ -69,11 +69,16 @@ int main(int argc, char *argv[])
 	printf("Loading Cost: %lld ms\n", Util::GetElapse());
 
 	searcher.Init();
-	uint16_t width;
-	width = dmdnum * 3;
-	width = min(width, 80);
+
+	uint16_t width, w1, w2;
+	w1 = sqrt(linknum * dmdnum * 1.0) / 3;
+	w2 = dmdnum * 8 / 5;
+	width = max(w1, w2);
+	width = min(width, 90);
 	printf("Try depth %d and width %d\n", 16, width);
+
 	searcher.Step1(16, width);
+
 	printf("First Cost: %lld ms\n", Util::GetElapse());
 
 	if (isDebug)

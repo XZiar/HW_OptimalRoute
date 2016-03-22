@@ -182,18 +182,18 @@ void Searcher::fastDFS(uint16_t curID)
 			curPath.mid[curPath.cnt++] = p.out[a].rid;//add go though
 			curPath.pmap.Set(thisID, true);//set bitmap
 			curPath.to = thisID;//add destination
-			curPath.isEnd = thisID == pmain.to ? 0xff : 0x0;
+			curPath.isEnd = (thisID == pmain.to ? 0x7f : 0x0);
 			
-			if (curPit->cnt < 80)//has space
+			if (curPit->cnt < maxwide)//has space
 			{
 				curPit->paths[curPit->cnt++] = curPath;//add psth
 				curPit->maxcost = max(curPath.cost, curPit->maxcost);//refresh max-cost
 			}
 			else
 			{//full,but cost lower
-				sort(curPit->paths, curPit->paths + 80);//sort to find out the longest
-				curPit->paths[80 - 1] = curPath;//replace
-				curPit->maxcost = max(curPath.cost, curPit->paths[80 - 2].cost);//refresh max-cost
+				sort(curPit->paths, curPit->paths + maxwide);//sort to find out the longest
+				curPit->paths[maxwide - 1] = curPath;//replace
+				curPit->maxcost = max(curPath.cost, curPit->paths[maxwide - 2].cost);//refresh max-cost
 			}
 
 			curPath.pmap.Set(thisID, false);//clear bitmap
@@ -234,15 +234,30 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 		curPit->from = curPath.from = demand.idNeed[a];
 		
 		fastDFS(curPath.from);
-		if (a != demand.count)// not for the start
-			for (int b = 0; b < curPit->cnt; b++)
-				if (curPit->paths[b].to == pmain.to)
-				{
-					curPit->hasEnd = true;
-					++pather.endcnt;
-					break;
-				}
 		sort(curPit->paths, curPit->paths + curPit->cnt);
+
+		for (int b = 0; b < curPit->cnt; b++)
+		{
+			if (curPit->paths[b].to == pmain.to)
+			{
+				curPit->hasEnd = true;
+				//break;
+			}
+			else
+			{
+				curPit->endcnt = b;
+				break;
+			}
+		}
+		if (curPit->hasEnd == true)
+		{
+			if (a != demand.count)
+				++pather.endcnt;
+			else
+				curPit->hasEnd = false;
+		}
+		//printf("pf%d:cnt%d,endcnt:%d,%d\n", a, curPit->cnt, curPit->endcnt, curPit->hasEnd);
+		
 		curPit->cnt = min(curPit->cnt, maxwidth);
 	}
 }
@@ -250,7 +265,16 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 
 void Searcher::fastDFSless(PathFirst &pf)
 {
-	for (uint8_t a = 0; a < pf.cnt;)
+	uint8_t a, enda;
+	if (pather.cnt == demand.count)
+	{
+		a = 0, enda = pf.endcnt;
+	}
+	else
+	{
+		a = pf.endcnt, enda = pf.cnt;
+	}
+	while (a < enda)
 	{
 		PathData &p = pf.paths[a++];
 		/*_mm_prefetch((char*)&p, _MM_HINT_NTA);
@@ -261,10 +285,13 @@ void Searcher::fastDFSless(PathFirst &pf)
 		if (!pather.pmap[pather.cnt].Test(p.pmap))//has overlap points
 			continue;
 
-		if (p.isEnd)
+		if (p.isEnd == 0x7f)
 		{
-			if(pather.cnt < demand.count)//can't go to dest now
+			if (pather.cnt < demand.count)//can't go to dest now
+			{
+				printf("should not happen!\n");
 				continue;
+			}
 			//final step,find a shorter route
 			pather.minCost = pather.curCost + p.cost;
 			pather.lastCost = p.cost;//refresh lastCost
@@ -276,6 +303,11 @@ void Searcher::fastDFSless(PathFirst &pf)
 		}
 		else//reach next point
 		{
+			if (pather.cnt == demand.count)//should go to dest now
+			{
+				printf("should not happen!\n");
+				continue;
+			}
 			PathFirst &npf = *path1[p.to];
 			if (npf.hasEnd)
 			{
