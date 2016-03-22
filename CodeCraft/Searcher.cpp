@@ -4,7 +4,13 @@
 const uint8_t PMap::mask[8] = { 0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1 };
 PMap::PMap()
 {
-	memset(datB, 0, sizeof(datB));
+	const __m128i dat = _mm_setzero_si128();
+	_mm_store_si128(&datSSE[0], dat);
+	_mm_store_si128(&datSSE[1], dat);
+	_mm_store_si128(&datSSE[2], dat);
+	_mm_store_si128(&datSSE[3], dat);
+	_mm_store_si128(&datSSE[4], dat);
+	//memset(datB, 0, sizeof(datB));
 }
 PMap::PMap(const PMap & ori)
 {
@@ -13,11 +19,11 @@ PMap::PMap(const PMap & ori)
 void PMap::Merge(const PMap & left, const PMap & right)
 {
 #if defined(SSE)
-	datSSE[0] = _mm_or_si128(left.datSSE[0], right.datSSE[0]);
-	datSSE[1] = _mm_or_si128(left.datSSE[1], right.datSSE[1]);
-	datSSE[2] = _mm_or_si128(left.datSSE[2], right.datSSE[2]);
-	datSSE[3] = _mm_or_si128(left.datSSE[3], right.datSSE[3]);
-	datSSE[4] = _mm_or_si128(left.datSSE[4], right.datSSE[4]);
+	datSSE[0] = _mm_or_si128(_mm_load_si128(&left.datSSE[0]), _mm_load_si128(&right.datSSE[0]));
+	datSSE[1] = _mm_or_si128(_mm_load_si128(&left.datSSE[1]), _mm_load_si128(&right.datSSE[1]));
+	datSSE[2] = _mm_or_si128(_mm_load_si128(&left.datSSE[2]), _mm_load_si128(&right.datSSE[2]));
+	datSSE[3] = _mm_or_si128(_mm_load_si128(&left.datSSE[3]), _mm_load_si128(&right.datSSE[3]));
+	datSSE[4] = _mm_or_si128(_mm_load_si128(&left.datSSE[4]), _mm_load_si128(&right.datSSE[4]));
 #else
 	for (int a = 0; a < 10; a++)
 		datL[a] = left.datL[a] | right.datL[a];
@@ -30,12 +36,24 @@ bool PMap::Test(uint16_t id) const
 bool PMap::Test(const PMap & right) const
 {
 #if defined(SSE)
-	__m128i p0 = _mm_or_si128(_mm_and_si128(datSSE[0], right.datSSE[0]), _mm_and_si128(datSSE[1], right.datSSE[1])),
-		p1 = _mm_or_si128(_mm_and_si128(datSSE[2], right.datSSE[2]), _mm_and_si128(datSSE[3], right.datSSE[3])),
-		t4 = _mm_and_si128(datSSE[4], right.datSSE[4]);
-	__m128i t0 = _mm_or_si128(p0, t4);
-		
-	return (_mm_testz_si128(t0, t0) && _mm_testz_si128(p1, p1));//all zero
+#   ifdef AVX
+	__m256 t0 = _mm256_and_ps(_mm256_load_ps((float*)&datAVX[0]), _mm256_load_ps((float*)&right.datAVX[0])),
+		t1 = _mm256_and_ps(_mm256_load_ps((float*)&datAVX[1]), _mm256_load_ps((float*)&right.datAVX[1])),
+		t2 = _mm256_and_ps(_mm256_load_ps((float*)&datAVX[2]), _mm256_load_ps((float*)&right.datAVX[2]));
+	__m256i a0 = _mm256_castps_si256(_mm256_or_ps(t0, t1)),
+		a1 = _mm256_castps_si256(t2);
+	return (_mm256_testz_si256(a1, a1) && _mm256_testz_si256(a0, a0));
+#   else
+	__m128i t0 = _mm_and_si128(_mm_load_si128(&datSSE[0]), _mm_load_si128(&right.datSSE[0])),
+		t1 = _mm_and_si128(_mm_load_si128(&datSSE[1]), _mm_load_si128(&right.datSSE[1])),
+		t2 = _mm_and_si128(_mm_load_si128(&datSSE[2]), _mm_load_si128(&right.datSSE[2])),
+		t3 = _mm_and_si128(_mm_load_si128(&datSSE[3]), _mm_load_si128(&right.datSSE[3])),
+		t4 = _mm_and_si128(_mm_load_si128(&datSSE[4]), _mm_load_si128(&right.datSSE[4]));
+	__m128i p0 = _mm_or_si128(t0, t1),
+		p1 = _mm_or_si128(t2, t3);
+	__m128i a0 = _mm_or_si128(p0, t4);
+	return (_mm_testz_si128(a0, a0) && _mm_testz_si128(p1, p1));//all zero
+#    endif
 #else
 	for (int a = 0; a < 10; a++)
 		if (datL[a] & right.datL[a])
@@ -220,10 +238,10 @@ void Searcher::fastDFSless(PathFirst &pf)
 			pather.pstack[pather.cnt++] = &p;//add go though
 			pather.lastCost -= p.cost;
 #ifndef FIN
-			/*
+			
 			if (pather.cnt < demand.count - 13)
 				printf("@@@ %d here at %dth when %lld\n", pather.cnt, a, Util::GetElapse());
-			*/
+			
 #endif
 			fastDFSless(npf);
 

@@ -1,7 +1,7 @@
 #pragma once
 #include "util.h"
 
-struct PMap
+struct _MM_ALIGN32 PMap
 {
 	static const uint8_t mask[8];
 	union
@@ -10,6 +10,9 @@ struct PMap
 		uint64_t datL[10];
 #if defined(SSE)
 		__m128i datSSE[5];
+#   ifdef AVX
+		__m256 datAVX[3];
+#   endif
 #endif
 	};
 
@@ -54,12 +57,16 @@ private:
 public:
 	struct PathFirst
 	{
-		PathData paths[95];
+		PathData paths[87];
+		PathData endpaths[8];
 		uint16_t from,
-			maxcost = 0;
-		uint8_t cnt = 0;
+			maxcost = 0,
+			maxendcost = 0;
+		uint8_t cnt = 0,
+			endcnt = 0;
 		bool hasEnd = false;
 	}paths1[52];
+	//int kkk = sizeof(PathFirst);
 	PathFirst *path1[600];
 	/*
 	struct PathSecond
@@ -93,6 +100,7 @@ public:
 	}pather;
 
 	void fastDFSless(PathFirst &pf);
+	void fastDFSlessEND(PathFirst &pf);
 
 	//void fastDFSmore(PathSecond &ps);
 
