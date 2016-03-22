@@ -178,12 +178,15 @@ void Searcher::fastDFS(uint16_t curID)
 			continue;
 		if (pmain.pmap.Test(thisID))//reach need-point
 		{
+			if (pather.pmap[curPath.cnt].Test(thisID))//become superset
+				continue;
+			pather.pmap[curPath.cnt].Set(thisID, true);//add blocker
 			curPath.cost += p.out[a].dis;//add cost
 			curPath.mid[curPath.cnt++] = p.out[a].rid;//add go though
 			curPath.pmap.Set(thisID, true);//set bitmap
 			curPath.to = thisID;//add destination
 			curPath.isEnd = (thisID == pmain.to ? 0x7f : 0x0);
-			
+
 			if (curPit->cnt < maxwide)//has space
 			{
 				curPit->paths[curPit->cnt++] = curPath;//add psth
@@ -205,13 +208,16 @@ void Searcher::fastDFS(uint16_t curID)
 		else if (curPath.cnt < maxlevel && thisID != pmain.from)//still can go deeper and not toward start-point
 		{
 			curPath.cost += p.out[a].dis;//add cost
+			pather.pmap[curPath.cnt + 1] = pather.pmap[curPath.cnt];//copy blocker
 			curPath.mid[curPath.cnt++] = p.out[a].rid;//add go though
 			curPath.pmap.Set(thisID, true);//set bitmap
 			
+			
 			fastDFS(thisID);//into next point
 
+			pather.cnt--;//pop blocker
 			curPath.pmap.Set(thisID, false);//clear bitmap
-			curPath.cnt--;//rollback go though
+			curPath.cnt--;//rollback go though & blocker
 			curPath.cost -= p.out[a].dis;//rollback cost
 			continue;
 		}
@@ -219,6 +225,7 @@ void Searcher::fastDFS(uint16_t curID)
 	//finish this point
 	return;
 }
+
 static bool Separator(const PathData &pa, const PathData &pb)
 {
 	return pa.isEnd == pb.isEnd ? (pa.cost == pb.cost ? pa.cnt < pb.cnt : pa.cost < pb.cost) : (pa.isEnd > pb.isEnd);
@@ -232,6 +239,7 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 	{
 		curPit = path1[demand.idNeed[a]] = &paths1[a];
 		curPath.Clean();
+		pather.pmap[0].Clean();
 		curPit->from = curPath.from = demand.idNeed[a];
 		
 		fastDFS(curPath.from);
@@ -243,11 +251,11 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 		curPit->endcnt = b;
 		if (b > 0 && a != demand.count)
 		{
-			curPit->hasEnd = true;
+			curPit->hasEnd = 0x7f;
 			++pather.endcnt;
 		}
 		else
-			curPit->hasEnd = false;
+			curPit->hasEnd = 0x0;
 		//printf("pf%d:cnt%d,endcnt:%d,%d\n", a, curPit->cnt, curPit->endcnt, curPit->hasEnd);
 
 	}
@@ -341,5 +349,6 @@ void Searcher::FormRes()
 void Searcher::StepLess()
 {
 	pather.cnt = 0;
+	pather.pmap[0].Clean();
 	fastDFSless(*path1[pmain.from]);
 }

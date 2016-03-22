@@ -59,15 +59,15 @@ public:
 		uint16_t from,
 			maxcost = 0;
 		uint8_t cnt = 0,
-			endcnt = 0;
-		bool hasEnd = false;
+			endcnt = 0,
+			hasEnd = 0;
 	}paths1[52];
 	//int kkk = sizeof(PathFirst);
 	PathFirst *path1[600];
 
-	uint8_t maxlevel, maxwide;
-	PathFirst * curPit;
 	PathData curPath;
+	PathFirst * curPit;
+	uint8_t maxlevel, maxwide;
 	void fastDFS(uint16_t curID);
 
 	struct _MM_ALIGN32 PathLast
@@ -87,7 +87,6 @@ public:
 
 	void FormRes();
 public:
-	bool isRun = true;
 	PointData points[600];
 	DemandData demand;
 

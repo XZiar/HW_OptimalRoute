@@ -27,9 +27,9 @@ int16_t Util::ReadFile(const char* fname, PointData * points)
 	if (fp == NULL)
 		return -1;
 
-	int cnt = 0;
-	int idLink, idSrc, idDest, cost;
-	for (; fscanf(fp, "%d,%d,%d,%d", &idLink, &idSrc, &idDest, &cost) != EOF; )
+	int16_t cnt = 0;
+	int16_t idLink, idSrc, idDest, cost;
+	for (; fscanf(fp, "%hd,%hd,%hd,%hd", &idLink, &idSrc, &idDest, &cost) != EOF; )
 	{
 		//topo[cnt].idLink = idLink, topo[cnt].idSrc = idSrc, topo[cnt].idDest = idDest, topo[cnt].cost = cost;
 		PointData &p = points[idSrc];
@@ -60,7 +60,7 @@ int16_t Util::ReadFile(const char* fname, DemandData &dmd)
 	if (fp == NULL)
 		return -1;
 
-	int cnt = 0;
+	int16_t cnt = 0;
 	memset(&dmd, 0, sizeof(dmd));
 	char str[512];
 	fscanf(fp, "%hd,%hd,", &dmd.idFrom, &dmd.idTo);
