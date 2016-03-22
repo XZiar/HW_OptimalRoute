@@ -19,6 +19,7 @@ struct _MM_ALIGN32 PMap
 	PMap();
 	PMap(const PMap& ori);
 	void Merge(const PMap & left, const PMap & right);
+	bool Set(const uint16_t id, bool type);
 	bool Test(const uint16_t id) const;
 	bool Test(const PMap & right) const;
 };
@@ -36,8 +37,6 @@ struct PathData
 	PathData();
 	void Clean();
 	void Merge(const PathData & left, const PathData & right);
-	void Set(const uint16_t id, const bool type);
-	bool Test(const uint16_t id) const;
 
 	bool operator<(const PathData &pd) const
 	{

@@ -62,9 +62,24 @@ void PMap::Merge(const PMap & left, const PMap & right)
 		datL[a] = left.datL[a] | right.datL[a];
 #endif
 }
+bool PMap::Set(uint16_t id, bool type)
+{
+	long long * ptr = (long long*)&datL[id >> 6];
+	if (type)
+		_bittestandset64(ptr, id & 0x3f);
+	else
+		_bittestandreset64(ptr, id & 0x3f);
+	/*if (type)
+		datB[id >> 3] |= mask[id & 0x7];
+	else
+		datB[id >> 3] &= ~mask[id & 0x7];*/
+	return true;
+}
 bool PMap::Test(uint16_t id) const
 {
-	return (datB[id >> 3] & mask[id & 0x7]) != 0x0;
+	long long * ptr = (long long*)&datL[id >> 6];
+	return _bittest64(ptr, id & 0x3f);
+	//return (datB[id >> 3] & mask[id & 0x7]) != 0x0;
 }
 bool PMap::Test(const PMap & right) const
 {
@@ -117,19 +132,6 @@ void PathData::Merge(const PathData & left, const PathData & right)
 	pmap.Merge(left.pmap, right.pmap);
 }
 
-void PathData::Set(uint16_t id, bool type)
-{
-	if (type)
-		pmap.datB[id >> 3] |= PMap::mask[id & 0x7];
-	else
-		pmap.datB[id >> 3] &= ~PMap::mask[id & 0x7];
-}
-
-bool PathData::Test(uint16_t id) const
-{
-	return pmap.Test(id);
-}
-
 
 
 
@@ -147,9 +149,9 @@ void Searcher::Init()
 {
 	pmain.from = demand.idFrom, pmain.to = demand.idTo;
 	demand.idNeed[demand.count] = demand.idFrom;
-	pmain.Set(demand.idTo, true);
+	pmain.pmap.Set(demand.idTo, true);
 	for (int a = 0; a < demand.count; a++)
-		pmain.Set(demand.idNeed[a], true);
+		pmain.pmap.Set(demand.idNeed[a], true);
 }
 
 void Searcher::fastDFS(uint16_t curID)
@@ -160,13 +162,13 @@ void Searcher::fastDFS(uint16_t curID)
 		if (curPit->cnt == maxwide && curPit->maxcost - curPath.cost < p.out[a].dis)//this is too long
 			break;//according to order, later ones are much longer
 		uint16_t &thisID = p.out[a].dest;
-		if (curPath.Test(thisID))//already go through
+		if (curPath.pmap.Test(thisID))//already go through
 			continue;
-		if (pmain.Test(thisID))//reach need-point
+		if (pmain.pmap.Test(thisID))//reach need-point
 		{
 			curPath.cost += p.out[a].dis;//add cost
 			curPath.mid[curPath.cnt++] = p.out[a].rid;//add go though
-			curPath.Set(thisID, true);//set bitmap
+			curPath.pmap.Set(thisID, true);//set bitmap
 			curPath.to = thisID;//add destination
 			
 			if (curPit->cnt < maxwide)//has space
@@ -181,7 +183,7 @@ void Searcher::fastDFS(uint16_t curID)
 				curPit->maxcost = max(curPath.cost, curPit->paths[maxwide - 2].cost);//refresh max-cost
 			}
 
-			curPath.Set(thisID, false);//clear bitmap
+			curPath.pmap.Set(thisID, false);//clear bitmap
 			curPath.cnt--;//rollback go though
 			curPath.cost -= p.out[a].dis;//rollback cost
 			continue;
@@ -191,11 +193,11 @@ void Searcher::fastDFS(uint16_t curID)
 		{
 			curPath.cost += p.out[a].dis;//add cost
 			curPath.mid[curPath.cnt++] = p.out[a].rid;//add go though
-			curPath.Set(thisID, true);//set bitmap
+			curPath.pmap.Set(thisID, true);//set bitmap
 			
 			fastDFS(thisID);//into next point
 
-			curPath.Set(thisID, false);//clear bitmap
+			curPath.pmap.Set(thisID, false);//clear bitmap
 			curPath.cnt--;//rollback go though
 			curPath.cost -= p.out[a].dis;//rollback cost
 			continue;

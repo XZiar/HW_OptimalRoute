@@ -63,7 +63,7 @@ int16_t Util::ReadFile(const char* fname, DemandData &dmd)
 	int cnt = 0;
 	memset(&dmd, 0, sizeof(dmd));
 	char str[512];
-	fscanf(fp, "%d,%d,", &dmd.idFrom, &dmd.idTo);
+	fscanf(fp, "%hd,%hd,", &dmd.idFrom, &dmd.idTo);
 	fscanf(fp, "%s", str);
 	for (int a = 0; a < strlen(str);a++)
 	{
