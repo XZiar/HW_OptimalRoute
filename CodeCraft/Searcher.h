@@ -43,12 +43,7 @@ struct _MM_ALIGN32 PathData
 
 	bool operator<(const PathData &pd) const
 	{
-		return isEnd == pd.isEnd ? (cost == pd.cost ? cnt < pd.cnt : cost < pd.cost) : (isEnd > pd.isEnd);
-		//return cost == pd.cost ? cnt < pd.cnt : cost < pd.cost;
-	}
-	bool operator>(const PathData &pd) const
-	{
-		return isEnd == pd.isEnd ? (cost == pd.cost ? cnt > pd.cnt : cost > pd.cost) : (isEnd < pd.isEnd);
+		return cost == pd.cost ? cnt < pd.cnt : cost < pd.cost;
 	}
 };
 //auto spd = sizeof(PathData);

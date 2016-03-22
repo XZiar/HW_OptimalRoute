@@ -219,7 +219,10 @@ void Searcher::fastDFS(uint16_t curID)
 	//finish this point
 	return;
 }
-
+static bool Separator(const PathData &pa, const PathData &pb)
+{
+	return pa.isEnd == pb.isEnd ? (pa.cost == pb.cost ? pa.cnt < pb.cnt : pa.cost < pb.cost) : (pa.isEnd > pb.isEnd);
+}
 void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 {
 	maxlevel = maxdepth;
@@ -234,7 +237,7 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 		curPit->from = curPath.from = demand.idNeed[a];
 		
 		fastDFS(curPath.from);
-		sort(curPit->paths, curPit->paths + curPit->cnt);
+		sort(curPit->paths, curPit->paths + curPit->cnt, Separator);
 
 		for (int b = 0; b < curPit->cnt; b++)
 		{
@@ -287,11 +290,11 @@ void Searcher::fastDFSless(PathFirst &pf)
 
 		if (p.isEnd == 0x7f)
 		{
-			if (pather.cnt < demand.count)//can't go to dest now
+			/*if (pather.cnt < demand.count)//can't go to dest now
 			{
 				printf("should not happen!\n");
 				continue;
-			}
+			}*/
 			//final step,find a shorter route
 			pather.minCost = pather.curCost + p.cost;
 			pather.lastCost = p.cost;//refresh lastCost
@@ -303,11 +306,11 @@ void Searcher::fastDFSless(PathFirst &pf)
 		}
 		else//reach next point
 		{
-			if (pather.cnt == demand.count)//should go to dest now
+			/*if (pather.cnt == demand.count)//should go to dest now
 			{
 				printf("should not happen!\n");
 				continue;
-			}
+			}*/
 			PathFirst &npf = *path1[p.to];
 			if (npf.hasEnd)
 			{
