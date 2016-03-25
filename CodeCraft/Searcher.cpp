@@ -307,8 +307,8 @@ void Searcher::fastDFSless(PathFirst &pf)
 	#ifndef FIN
 		/*if (pather.cnt < demand.count - 13)
 			printf("@@@ %d here at %dth when %lld\n", pather.cnt, a, Util::GetElapse());*/
-	#endif
 		loopcount++;
+	#endif
 		if (pather.cnt == demand.count)
 			fastDFSlessEND(npf);
 		else
@@ -333,14 +333,14 @@ void Searcher::fastDFSlessEND(PathFirst &pf)
 			break;//according to order, later ones cost more
 		if (!pather.pmap[pather.cnt].Test(p.pmap))//has overlap points
 			continue;
-
+#ifndef FIN
 		anscnt++;
-		//if (pather.lastCost > p.cost)//cost too much
+#endif
+		//if (pather.lastCost > p.cost)//cost not too much
 		{//final step,find a shorter route
 			pather.minCost = pather.curCost + p.cost;
 			pather.lastCost = p.cost;//refresh lastCost
 			pather.pstack[pather.cnt++] = &p;
-
 
 			FormRes();
 			pather.cnt--;//rollback go though

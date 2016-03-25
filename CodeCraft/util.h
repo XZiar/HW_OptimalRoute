@@ -14,7 +14,7 @@ struct PointData
 		uint16_t dest;
 		uint16_t rid;
 		uint16_t dis;
-	} out[8];
+	} out[128];
 	uint16_t id;
 	uint8_t cnt = 0;
 };
@@ -39,7 +39,6 @@ class Util
 	static uint64_t t_begin;
 	//static TOPOData topo[4800];
 public:
-	static bool isChk;
 	static void Init(const char * fname);
 
 	static uint64_t GetElapse();

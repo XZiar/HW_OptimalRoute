@@ -51,11 +51,11 @@ struct _MM_ALIGN32 PathData
 class Searcher
 {
 private:
-	PathData pmain;
+	
 public:
 	struct _MM_ALIGN32 PathFirst
 	{
-		PathData paths[92];
+		PathData paths[130];
 		uint16_t from,
 			maxcost = 0;
 		uint8_t cnt = 0,
@@ -63,11 +63,7 @@ public:
 			hasEnd = 0;
 	}paths1[52];
 	//int kkk = sizeof(PathFirst);
-	PathFirst *path1[600];
-
-	PathData curPath;
-	PathFirst * curPit;
-	uint8_t maxlevel, maxwide;
+	
 	void fastDFS(uint16_t curID);
 
 	struct _MM_ALIGN32 PathLast
@@ -81,6 +77,12 @@ public:
 			endcnt = 0,
 			cntlim = 0;
 	}pather;
+
+	PathFirst *path1[600];
+	PathData pmain;
+	PathData curPath;
+	PathFirst * curPit;
+	uint8_t maxlevel, maxwide;
 
 	void fastDFSless(PathFirst &pf);
 	void fastDFSlessEND(PathFirst &pf);

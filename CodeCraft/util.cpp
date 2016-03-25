@@ -7,7 +7,6 @@ using namespace std::chrono;
 char Util::outfname[256];
 uint64_t Util::t_begin;
 //TOPOData Util::topo[4800];
-bool Util::isChk = false;
 void Util::Init(const char * fname)
 {
 	t_begin = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
@@ -29,6 +28,7 @@ int16_t Util::ReadFile(const char* fname, PointData * points)
 
 	int16_t cnt = 0;
 	int16_t idLink, idSrc, idDest, cost;
+	//for (; fscanf(fp, "%hd,%hd,%hd,%hd", &idLink, &idDest, &idSrc, &cost) != EOF; )
 	for (; fscanf(fp, "%hd,%hd,%hd,%hd", &idLink, &idSrc, &idDest, &cost) != EOF; )
 	{
 		//topo[cnt].idLink = idLink, topo[cnt].idSrc = idSrc, topo[cnt].idDest = idDest, topo[cnt].cost = cost;
@@ -63,6 +63,7 @@ int16_t Util::ReadFile(const char* fname, DemandData &dmd)
 	int16_t cnt = 0;
 	memset(&dmd, 0, sizeof(dmd));
 	char str[512];
+	//fscanf(fp, "%hd,%hd,", &dmd.idTo, &dmd.idFrom);
 	fscanf(fp, "%hd,%hd,", &dmd.idFrom, &dmd.idTo);
 	fscanf(fp, "%s", str);
 	for (int a = 0; a < strlen(str);a++)
@@ -90,13 +91,10 @@ int16_t Util::WriteFile(const ResData * path)
 	else
 	{
 		printf("write ans cost %3d with %3d links at %lldms\n", path->cost, path->count, GetElapse());
+		/*for (int a = path->count; a-- > 0;)
+			fprintf(fp, a == 0? "%d\n" : "%d|", path->idLink[a]);*/
 		for (int a = 0; a < path->count; a++)
 			fprintf(fp, path->count - a == 1 ? "%d\n" : "%d|", path->idLink[a]);
-		if (isChk)
-		{
-			//check answer
-
-		}
 	}
 	fclose(fp);
 	return 0;
