@@ -35,15 +35,7 @@ int main(int argc, char *argv[])
 
 
 	Util::Init(fn3);
-	if (!isStay)
-	{
-		thread thr = thread([]()
-		{
-			this_thread::sleep_for(chrono::milliseconds(9800));
-			exit(0);
-		});
-		thr.detach();
-	}
+
 
 	printf("Open topo File : %s\n", fn1);
 	int16_t linknum = Util::ReadFile(fn1, searcher.points);
@@ -59,11 +51,14 @@ int main(int argc, char *argv[])
 	else
 		printf("get %d need from demand\n", dmdnum);
 
-	if (isDebug)
+	if (!isStay && dmdnum >= 15)
 	{
-		printf("From %3d to %3d\nNeed:\t", searcher.demand.idFrom, searcher.demand.idTo);
-		for (int a = 0; a < dmdnum; ++a)
-			printf(a == dmdnum - 1 ? "%3d\n" : "%3d  ", searcher.demand.idNeed[a]);
+		thread thr = thread([]()
+		{
+			this_thread::sleep_for(chrono::milliseconds(9700));
+			exit(0);
+		});
+		thr.detach();
 	}
 
 	printf("Loading Cost: %lld ms\n", Util::GetElapse());
@@ -80,7 +75,7 @@ int main(int argc, char *argv[])
 	searcher.Step1(16, width);
 
 	printf("First Cost: %lld ms\n", Util::GetElapse());
-
+#ifndef FIN
 	if (isDebug)
 	{
 		for (int a = 0; a <= dmdnum; a++)
@@ -98,8 +93,8 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	
-		searcher.StepLess();
+#endif
+	searcher.StepLess();
 
 	printf("Totol: %lld ms\n", Util::GetElapse());
 	if(isStay)

@@ -164,6 +164,22 @@ void Searcher::Init()
 	pmain.pmap.Set(demand.idTo, true);
 	for (int a = 0; a < demand.count; a++)
 		pmain.pmap.Set(demand.idNeed[a], true);
+	//wrong to superset block
+	//for (PointData &p : points)
+	//{
+	//	if (p.cnt > 1)
+	//	{
+	//		sort(p.out, p.out + p.cnt, [&](PointData::Out &o1, PointData::Out &o2) 
+	//		{
+	//			bool a = pmain.pmap.Test(o1.dest), b = pmain.pmap.Test(o2.dest);
+	//			if (a == b)
+	//				return o1.dis < o2.dis;
+	//			else
+	//				return a;
+	//		});
+	//	}
+	//	//printf("%d",p.cnt);
+	//}
 }
 
 void Searcher::fastDFS(uint16_t curID)
@@ -178,9 +194,9 @@ void Searcher::fastDFS(uint16_t curID)
 			continue;
 		if (pmain.pmap.Test(thisID))//reach need-point
 		{
-			if (pather.pmap[curPath.cnt].Test(thisID))//become superset
-				continue;
-			pather.pmap[curPath.cnt].Set(thisID, true);//add blocker
+			//if (pather.pmap[curPath.cnt].Test(thisID))//become superset
+				//continue;
+			//pather.pmap[curPath.cnt].Set(thisID, true);//add blocker
 			curPath.cost += p.out[a].dis;//add cost
 			curPath.mid[curPath.cnt++] = p.out[a].rid;//add go though
 			curPath.pmap.Set(thisID, true);//set bitmap
@@ -208,7 +224,7 @@ void Searcher::fastDFS(uint16_t curID)
 		else if (curPath.cnt < maxlevel && thisID != pmain.from)//still can go deeper and not toward start-point
 		{
 			curPath.cost += p.out[a].dis;//add cost
-			pather.pmap[curPath.cnt + 1] = pather.pmap[curPath.cnt];//copy blocker
+			//pather.pmap[curPath.cnt + 1] = pather.pmap[curPath.cnt];//copy blocker
 			curPath.mid[curPath.cnt++] = p.out[a].rid;//add go though
 			curPath.pmap.Set(thisID, true);//set bitmap
 			
