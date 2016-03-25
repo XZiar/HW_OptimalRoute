@@ -89,7 +89,8 @@ public:
 public:
 	PointData points[600];
 	DemandData demand;
-
+	uint64_t loopcount = 0;
+	uint32_t anscnt = 0;
 	Searcher();
 	~Searcher();
 

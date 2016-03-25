@@ -21,6 +21,34 @@ int main(int argc, char *argv[])
 			Util::isChk = true;
 		else if (strcmp(argv[a], "stay") == 0)
 			isStay = true;
+		else if (strcmp(argv[a], "timer1") == 0)
+		{
+			thread([]()
+			{
+				uint64_t last = 0;
+				while (true)
+				{
+					this_thread::sleep_for(chrono::milliseconds(1000));
+					uint64_t cur = searcher.loopcount;
+					printf("loop %9lld at %lldms\n", cur - last, Util::GetElapse());
+					last = cur;
+				}
+			}).detach();
+		}
+		else if (strcmp(argv[a], "timer2") == 0)
+		{
+			thread([]()
+			{
+				uint32_t last = 0;
+				while (true)
+				{
+					this_thread::sleep_for(chrono::milliseconds(1000));
+					uint32_t cur = searcher.anscnt;
+					printf("ans get %2d of %4d at %lldms\n", cur - last, cur, Util::GetElapse());
+					last = cur;
+				}
+			}).detach();
+		}
 		else
 		{
 			fn_topo = argv[a] + fn_topo;
@@ -60,7 +88,7 @@ int main(int argc, char *argv[])
 		});
 		thr.detach();
 	}
-
+	
 	printf("Loading Cost: %lld ms\n", Util::GetElapse());
 
 	searcher.Init();
@@ -93,7 +121,10 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+
 #endif
+
+
 	searcher.StepLess();
 
 	printf("Totol: %lld ms\n", Util::GetElapse());
