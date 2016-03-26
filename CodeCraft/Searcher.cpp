@@ -12,9 +12,12 @@ PMap::PMap(const PMap & ori)
 {
 #if defined(SSE)
 #   ifdef AVX
-	_mm256_store_ps((float*)&datAVX[0], _mm256_load_ps((float*)&ori.datAVX[0]));
+	_mm256_store_si256(&datAVXi[0], _mm256_load_si256(&ori.datAVXi[0]));
+	_mm256_store_si256(&datAVXi[1], _mm256_load_si256(&ori.datAVXi[1]));
+	_mm256_store_si256(&datAVXi[2], _mm256_load_si256(&ori.datAVXi[2]));
+	/*_mm256_store_ps((float*)&datAVX[0], _mm256_load_ps((float*)&ori.datAVX[0]));
 	_mm256_store_ps((float*)&datAVX[1], _mm256_load_ps((float*)&ori.datAVX[1]));
-	_mm256_store_ps((float*)&datAVX[2], _mm256_load_ps((float*)&ori.datAVX[2]));
+	_mm256_store_ps((float*)&datAVX[2], _mm256_load_ps((float*)&ori.datAVX[2]));*/
 #   else
 	_mm_store_si128(&datSSE[0], _mm_load_si128(&ori.datSSE[0]));
 	_mm_store_si128(&datSSE[1], _mm_load_si128(&ori.datSSE[1]));
@@ -25,6 +28,28 @@ PMap::PMap(const PMap & ori)
 #else
 	memcpy(datB, ori.datB, sizeof(datB));
 #endif	
+}
+PMap & PMap::operator=(const PMap & from)
+{
+#if defined(SSE)
+#   ifdef AVX
+	_mm256_store_si256(&datAVXi[0], _mm256_load_si256(&from.datAVXi[0]));
+	_mm256_store_si256(&datAVXi[1], _mm256_load_si256(&from.datAVXi[1]));
+	_mm256_store_si256(&datAVXi[2], _mm256_load_si256(&from.datAVXi[2]));
+	/*_mm256_store_ps((float*)&datAVX[0], _mm256_load_ps((float*)&from.datAVX[0]));
+	_mm256_store_ps((float*)&datAVX[1], _mm256_load_ps((float*)&from.datAVX[1]));
+	_mm256_store_ps((float*)&datAVX[2], _mm256_load_ps((float*)&from.datAVX[2]));*/
+#   else
+	_mm_store_si128(&datSSE[0], _mm_load_si128(&from.datSSE[0]));
+	_mm_store_si128(&datSSE[1], _mm_load_si128(&from.datSSE[1]));
+	_mm_store_si128(&datSSE[2], _mm_load_si128(&from.datSSE[2]));
+	_mm_store_si128(&datSSE[3], _mm_load_si128(&from.datSSE[3]));
+	_mm_store_si128(&datSSE[4], _mm_load_si128(&from.datSSE[4]));
+#   endif
+#else
+	memcpy(datB, ori.datB, sizeof(datB));
+#endif	
+	return *this;
 }
 void PMap::Clean()
 {
@@ -126,6 +151,18 @@ bool PMap::Test(const PMap & right) const
 PathData::PathData()
 {
 	Clean();
+}
+
+PathData & PathData::operator=(const PathData & from)
+{
+	pmap = from.pmap;
+#ifdef AVX
+	_mm256_store_si256(&datAVX[0], _mm256_load_si256(&from.datAVX[0]));
+	_mm256_store_si256(&datAVX[1], _mm256_load_si256(&from.datAVX[1]));
+#else
+	memcpy(datB, ori.datB, sizeof(datB));
+#endif	
+	return *this;
 }
 
 void PathData::Clean()

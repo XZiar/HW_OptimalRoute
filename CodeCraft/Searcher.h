@@ -14,12 +14,14 @@ struct _MM_ALIGN32 PMap
 		__m128i datSSE[5];
 #   ifdef AVX
 		__m256 datAVX[3];
+		__m256i datAVXi[3];
 #   endif
 #endif
 	};
 
 	PMap();
-	PMap(const PMap& ori);
+	PMap(const PMap & ori);
+	PMap & operator= (const PMap & from);
 	void Clean();
 	void Merge(const PMap & left, const PMap & right);
 	void Set(const uint16_t id, bool type);
@@ -30,14 +32,19 @@ struct _MM_ALIGN32 PMap
 struct _MM_ALIGN32 PathData
 {
 	PMap pmap;
-	uint16_t from,
-		to,
-		cost,
-		mid[28];
-	uint8_t cnt,
-		isEnd;
+	union
+	{
+		struct
+		{
+			uint16_t from, to, cost,
+				mid[28];
+			uint8_t cnt, isEnd;
+		};
+		__m256i datAVX[2];
+	};
 
 	PathData();
+	PathData & operator= (const PathData & from);
 	void Clean();
 	void Merge(const PathData & left, const PathData & right);
 

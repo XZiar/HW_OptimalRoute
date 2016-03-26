@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 			isStay = true;
 		else if (strcmp(argv[a], "timer1") == 0)
 		{
-			thread([]()
+			thread([&]()
 			{
 				uint64_t last = 0;
 				while (true)
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[a], "timer2") == 0)
 		{
-			thread([]()
+			thread([&]()
 			{
 				uint32_t last = 0;
 				while (true)
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 	else
 		printf("get %d need from demand\n", dmdnum);
 
-	if (!isStay && dmdnum >= 18)
+	if (!isStay && dmdnum >= 38)
 	{
 		thread thr = thread([]()
 		{
@@ -91,16 +91,23 @@ int main(int argc, char *argv[])
 
 	searcher.Init();
 
-	uint16_t width, w1, w2;
-	w1 = sqrt(linknum * dmdnum * 1.0) / 2.88;
-	w2 = dmdnum * 2;
-	width = max(w1, w2);
-	width = min(width, 128);
-	printf("Try depth %d and width %d\n", 16, width);
+	uint16_t width, depth;
+	{
+		uint16_t d1, d2, w1, w2;
+		w1 = sqrt(linknum * dmdnum) / 3;
+		w2 = dmdnum * 2.56;
+		width = max(w1, w2);
+		width = min(width, 128);
+		d1 = sqrt(linknum) / 2;
+		depth = max(d1, 14);
+		depth = min(depth, 24);
+	}
+	printf("Try depth %d and width %d\n", depth, width);
 
-	searcher.Step1(16, width);
+	searcher.Step1(depth, width);
 
 	printf("First Cost: %lld ms\n", Util::GetElapse());
+	//return 0;
 #ifndef FIN
 	if (isDebug)
 	{
