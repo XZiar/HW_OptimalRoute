@@ -91,16 +91,13 @@ int main(int argc, char *argv[])
 
 	searcher.Init();
 
-	uint16_t width, depth;
+	uint16_t width, depth = 16;
 	{
-		uint16_t d1, d2, w1, w2;
-		w1 = sqrt(linknum * dmdnum) / 3;
-		w2 = dmdnum * 2.56;
+		uint16_t w1, w2;
+		w1 = sqrt(linknum * dmdnum) / 2.56;
+		w2 = dmdnum * 3.2;
 		width = max(w1, w2);
-		width = min(width, 160);
-		d1 = sqrt(linknum) / 2;
-		depth = max(d1, 14);
-		depth = min(depth, 16);
+		width = min(width, 164);
 	}
 	printf("Try depth %d and width %d\n", depth, width);
 
