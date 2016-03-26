@@ -311,13 +311,14 @@ void Searcher::fastDFSless(PathFirst &pf)
 	uint8_t a = pf.endcnt,
 		aend = pf.cnt;
 	PathData *p = &pf.paths[a];
-	_mm_prefetch((char*)&pather.pmap[pather.cnt], _MM_HINT_T1);
-	_mm_prefetch(((char*)&pather.pmap[pather.cnt]) + 64, _MM_HINT_T1);
+	PMap curPMAP = pather.pmap[pather.cnt];
+	/*_mm_prefetch((char*)&pather.pmap[pather.cnt], _MM_HINT_T1);
+	_mm_prefetch(((char*)&pather.pmap[pather.cnt]) + 64, _MM_HINT_T1);*/
 	for (; a++ < aend; p++)
 	{
 		if (pather.lastCost <= p->cost)//cost too much
 			break;//according to order, later ones cost more
-		if (!pather.pmap[pather.cnt].Test(p->pmap))//has overlap points
+		if (!curPMAP.Test(p->pmap))//has overlap points
 			continue;
 
 		//reach next point
@@ -329,8 +330,8 @@ void Searcher::fastDFSless(PathFirst &pf)
 			pather.endcnt--;
 		}
 		pather.curCost += p->cost;//add cost
-		pather.pmap[pather.cnt + 1].Merge(pather.pmap[pather.cnt], p->pmap);
 		pather.pstack[pather.cnt++] = p;//add go though
+		pather.pmap[pather.cnt].Merge(curPMAP, p->pmap);
 		pather.lastCost -= p->cost;//minus lastCost
 	#ifndef FIN
 		/*if (pather.cnt < demand.count - 13)
