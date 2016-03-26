@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 	{
 		uint16_t w1, w2;
 		w1 = sqrt(linknum * dmdnum) / 2.56;
-		w2 = dmdnum * 3.2;
+		w2 = dmdnum * 4.5;
 		width = max(w1, w2);
 		width = min(width, 164);
 	}
