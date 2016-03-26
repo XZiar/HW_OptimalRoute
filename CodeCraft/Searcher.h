@@ -62,7 +62,7 @@ private:
 public:
 	struct _MM_ALIGN32 PathFirst
 	{
-		PathData paths[130];
+		PathData paths[250];
 		uint16_t from,
 			maxcost = 0;
 		uint8_t cnt = 0,

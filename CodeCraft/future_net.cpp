@@ -97,10 +97,10 @@ int main(int argc, char *argv[])
 		w1 = sqrt(linknum * dmdnum) / 3;
 		w2 = dmdnum * 2.56;
 		width = max(w1, w2);
-		width = min(width, 128);
+		width = min(width, 160);
 		d1 = sqrt(linknum) / 2;
 		depth = max(d1, 14);
-		depth = min(depth, 24);
+		depth = min(depth, 16);
 	}
 	printf("Try depth %d and width %d\n", depth, width);
 
@@ -111,20 +111,24 @@ int main(int argc, char *argv[])
 #ifndef FIN
 	if (isDebug)
 	{
+		FILE * fp = fopen("log.txt", "w");
 		for (int a = 0; a <= dmdnum; a++)
 		{
 			uint16_t idFrom = searcher.demand.idNeed[a];
 			Searcher::PathFirst &pf = *searcher.path1[idFrom];
-			printf("%3d : %d path, %s\n", idFrom, pf.cnt, pf.hasEnd ? "hasEnd" : "noEnd");
+			fprintf(fp, "%3d : %d path, %s\n", idFrom, pf.cnt, pf.hasEnd ? "hasEnd" : "noEnd");
 			for (int b = 0; b < pf.cnt; b++)
 			{
 				PathData &p = pf.paths[b];
-				printf("\t%3d(%3d):", p.to, p.cost);
+				fprintf(fp, "\t%3d(%3d):", p.to, p.cost);
 				for (int c = 0; c < p.cnt; c++)
-					printf(" %4d", p.mid[c]);
-				printf("\n");
+					fprintf(fp, " %4d", p.mid[c]);
+				fprintf(fp, "\n");
 			}
 		}
+		fclose(fp);
+		getchar();
+		return 0;
 	}
 
 #endif

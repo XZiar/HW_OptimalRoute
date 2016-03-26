@@ -224,8 +224,9 @@ void Searcher::fastDFS(uint16_t curID)
 	PointData &p = points[curID];
 	for (uint8_t a = 0; a < p.cnt; a++)
 	{
-		if (curPit->cnt >= maxwide && curPit->maxcost - curPath.cost < p.out[a].dis)//this is too long
-			break;//according to order, later ones are much longer
+		//if (curPit->cnt >= maxwide && curPit->maxcost - curPath.cost < p.out[a].dis)//this is too long
+		if (curPit->maxcost - curPath.cost < p.out[a].dis)//this is too long
+			continue;//according to order, later ones are much longer
 		uint16_t &thisID = p.out[a].dest;
 		if (curPath.pmap.Test(thisID))//already go through
 			continue;
@@ -240,16 +241,24 @@ void Searcher::fastDFS(uint16_t curID)
 			curPath.to = thisID;//add destination
 			curPath.isEnd = (thisID == pmain.to ? 0x7f : 0x0);
 
-			if (curPit->cnt < maxwide)//has space
+			if (curPit->cnt < 240)//has space
+			//if (curPit->cnt < maxwide)//has space
 			{
 				curPit->paths[curPit->cnt++] = curPath;//add psth
-				curPit->maxcost = max(curPath.cost, curPit->maxcost);//refresh max-cost
+				//curPit->maxcost = max(curPath.cost, curPit->maxcost);//refresh max-cost
 			}
 			else
 			{//full,but cost lower
+				//anscnt++;
+				curPit->paths[curPit->cnt] = curPath;//replace
+				sort(curPit->paths, curPit->paths + 241);//sort to find out the longest
+				curPit->maxcost = curPit->paths[maxwide - 1].cost;//refresh max-cost
+				curPit->cnt = maxwide;
+				/*
 				sort(curPit->paths, curPit->paths + maxwide);//sort to find out the longest
 				curPit->paths[maxwide - 1] = curPath;//replace
 				curPit->maxcost = max(curPath.cost, curPit->paths[maxwide - 2].cost);//refresh max-cost
+				*/
 			}
 
 			curPath.pmap.Set(thisID, false);//clear bitmap
@@ -265,10 +274,8 @@ void Searcher::fastDFS(uint16_t curID)
 			curPath.mid[curPath.cnt++] = p.out[a].rid;//add go though
 			curPath.pmap.Set(thisID, true);//set bitmap
 			
-			
 			fastDFS(thisID);//into next point
 
-			pather.cnt--;//pop blocker
 			curPath.pmap.Set(thisID, false);//clear bitmap
 			curPath.cnt--;//rollback go though & blocker
 			curPath.cost -= p.out[a].dis;//rollback cost
@@ -282,22 +289,26 @@ void Searcher::fastDFS(uint16_t curID)
 static bool Separator(const PathData &pa, const PathData &pb)
 {
 	return pa.isEnd == pb.isEnd ? (pa.cost == pb.cost ? pa.cnt < pb.cnt : pa.cost < pb.cost) : (pa.isEnd > pb.isEnd);
+	//return pa.isEnd == pb.isEnd ? (pa.cnt == pb.cnt ? pa.cost < pb.cost : pa.cnt < pb.cnt) : (pa.isEnd > pb.isEnd);
 }
 void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 {
 	maxlevel = maxdepth;
 	maxwide = maxwidth;
 	pather.endcnt = 0;
+	anscnt = 0;
 	for (int a = 0; a <= demand.count; a++)
 	{
+		
 		curPit = path1[demand.idNeed[a]] = &paths1[a];
 		curPath.Clean();
 		pather.pmap[0].Clean();
+		curPit->maxcost = 100;
+		curPit->cnt = 0;
 		curPit->from = curPath.from = demand.idNeed[a];
-		
 		fastDFS(curPath.from);
 		sort(curPit->paths, curPit->paths + curPit->cnt, Separator);
-
+		curPit->cnt = min(curPit->cnt, maxwide);
 		int b = 0;
 		while (b < curPit->cnt && curPit->paths[b].isEnd)
 			b++;
@@ -310,7 +321,7 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 		else
 			curPit->hasEnd = 0x0;
 		//printf("pf%d:cnt%d,endcnt:%d,%d\n", a, curPit->cnt, curPit->endcnt, curPit->hasEnd);
-
+		//printf("%dth,%d,sort:%d\n", a, curPath.from, anscnt);
 	}
 }
 
