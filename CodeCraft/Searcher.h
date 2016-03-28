@@ -58,7 +58,12 @@ struct _MM_ALIGN32 PathData
 class Searcher
 {
 private:
-	
+	struct SimArg
+	{
+		uint16_t RemainCost;
+		uint8_t curlevel, epcnt;
+	};
+	//int tkp = sizeof(SimArg);
 public:
 	struct _MM_ALIGN32 PathFirst
 	{
@@ -76,8 +81,7 @@ public:
 	struct _MM_ALIGN32 PathLast
 	{
 		PMap pmap[64];
-		PathData *pstack[64];
-		uint16_t lastCost = 4000;
+		PathData *pstack[60];
 		uint8_t cnt = 0,
 			endcnt = 0,
 			cntlim = 0;
@@ -89,8 +93,8 @@ public:
 	PathFirst * curPit;
 	uint8_t maxlevel, maxwide;
 
-	void fastDFSless(PathData *p, const PathData *pend, const uint8_t curlevel);
-	void fastDFSlessEND(PathData *p, const PathData *pend, const uint8_t curlevel);
+	uint16_t fastDFSless(PathData *p, const PathData *pend, SimArg arg);
+	uint16_t fastDFSlessEND(PathData *p, const PathData *pend, SimArg arg);
 
 	void FormRes();
 public:

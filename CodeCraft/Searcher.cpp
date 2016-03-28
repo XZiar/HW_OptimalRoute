@@ -306,13 +306,13 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 }
 
 
-void Searcher::fastDFSless(PathData *p, const PathData *pend, const uint8_t curlevel)
+uint16_t Searcher::fastDFSless(PathData *p, const PathData *pend, SimArg arg)
 {
-	const PMap curPMAP = pather.pmap[curlevel];
-	const uint8_t nextlevel = curlevel + 1;
+	const PMap curPMAP = pather.pmap[arg.curlevel];
+	const uint8_t nextlevel = arg.curlevel + 1;
 	for (; p < pend; p++)
 	{
-		if (pather.lastCost <= p->cost)//cost too much
+		if (arg.RemainCost <= p->cost)//cost too much
 			break;//according to order, later ones cost more
 		if (!curPMAP.Test(p->pmap))//has overlap points
 			continue;
@@ -326,33 +326,33 @@ void Searcher::fastDFSless(PathData *p, const PathData *pend, const uint8_t curl
 			pather.endcnt--;
 		}
 
-		pather.pstack[curlevel] = p;//add go though
+		pather.pstack[arg.curlevel] = p;//add go though
 		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
-		pather.lastCost -= p->cost;//minus lastCost
+
 	#ifndef FIN
 		/*if (pather.cnt < demand.count - 13)
 			printf("@@@ %d here at %dth when %lld\n", pather.cnt, a, Util::GetElapse());*/
 		loopcount++;
 	#endif
-		if (nextlevel == demand.count)
-			fastDFSlessEND(&npf.paths[0], &npf.paths[npf.endcnt], nextlevel);
+		const SimArg narg{ arg.RemainCost - p->cost,nextlevel };
+		if (nextlevel != demand.count)
+			arg.RemainCost = p->cost + fastDFSless(&npf.paths[npf.endcnt], &npf.paths[npf.cnt], narg);
 		else
-			fastDFSless(&npf.paths[npf.endcnt], &npf.paths[npf.cnt], nextlevel);
-
-		pather.lastCost += p->cost;//rollback lastCost
+			arg.RemainCost = p->cost + fastDFSlessEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
 
 		if (npf.hasEnd)
 			pather.endcnt++;
 	}
 	//finish this point
+	return arg.RemainCost;//refresh lastCost
 }
 
-void Searcher::fastDFSlessEND(PathData *p, const PathData *pend, const uint8_t curlevel)
+uint16_t Searcher::fastDFSlessEND(PathData *p, const PathData *pend, SimArg arg)
 {
-	const PMap curPMAP = pather.pmap[curlevel];
+	const PMap curPMAP = pather.pmap[arg.curlevel];
 	for (; p < pend; p++)
 	{
-		if (pather.lastCost <= p->cost)//cost too much
+		if (arg.RemainCost <= p->cost)//cost too much
 			break;//according to order, later ones cost more
 		if (!curPMAP.Test(p->pmap))//has overlap points
 			continue;
@@ -361,14 +361,14 @@ void Searcher::fastDFSlessEND(PathData *p, const PathData *pend, const uint8_t c
 #endif
 		//if (pather.lastCost > p.cost)//cost not too much
 		{//final step,find a shorter route
-			pather.lastCost = p->cost;//refresh lastCost
-			pather.pstack[curlevel] = p;
+			pather.pstack[arg.curlevel] = p;
 
 			FormRes();
 		}
-		break;//according to order, later ones cost more
+		return p->cost;//according to order, later ones cost more
 	}
 	//finish this point
+	return arg.RemainCost;//refresh lastCost
 }
 
 
@@ -392,5 +392,5 @@ void Searcher::StepLess()
 	pather.cnt = 0;
 	pather.pmap[1].Clean();
 	PathFirst *pf = path1[pmain.from];
-	fastDFSless(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], 0);
+	fastDFSless(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], SimArg{ 1000,0 });
 }
