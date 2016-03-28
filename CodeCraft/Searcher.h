@@ -77,9 +77,7 @@ public:
 	{
 		PMap pmap[64];
 		PathData *pstack[64];
-		uint16_t curCost = 0,
-			minCost = 4000,
-			lastCost = 4000;
+		uint16_t lastCost = 4000;
 		uint8_t cnt = 0,
 			endcnt = 0,
 			cntlim = 0;
@@ -91,8 +89,8 @@ public:
 	PathFirst * curPit;
 	uint8_t maxlevel, maxwide;
 
-	void fastDFSless(PathFirst &pf);
-	void fastDFSlessEND(PathFirst &pf);
+	void fastDFSless(PathData *p, const PathData *pend, const uint8_t curlevel);
+	void fastDFSlessEND(PathData *p, const PathData *pend, const uint8_t curlevel);
 
 	void FormRes();
 public:

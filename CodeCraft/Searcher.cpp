@@ -306,11 +306,10 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 }
 
 
-void Searcher::fastDFSless(PathFirst &pf)
+void Searcher::fastDFSless(PathData *p, const PathData *pend, const uint8_t curlevel)
 {
-	PathData *p = &pf.paths[pf.endcnt],
-		*pend = &pf.paths[pf.cnt];
-	const PMap curPMAP = pather.pmap[pather.cnt];
+	const PMap curPMAP = pather.pmap[curlevel];
+	const uint8_t nextlevel = curlevel + 1;
 	for (; p < pend; p++)
 	{
 		if (pather.lastCost <= p->cost)//cost too much
@@ -322,27 +321,25 @@ void Searcher::fastDFSless(PathFirst &pf)
 		PathFirst &npf = *path1[p->to];
 		if (npf.hasEnd)
 		{
-			if (pather.endcnt == 1 && pather.cnt + 1 < demand.count)//no way to dest now
+			if (pather.endcnt == 1 && nextlevel < demand.count)//no way to dest now
 				continue;
 			pather.endcnt--;
 		}
-		pather.curCost += p->cost;//add cost
-		pather.pstack[pather.cnt++] = p;//add go though
-		pather.pmap[pather.cnt].Merge(curPMAP, p->pmap);
+
+		pather.pstack[curlevel] = p;//add go though
+		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
 		pather.lastCost -= p->cost;//minus lastCost
 	#ifndef FIN
 		/*if (pather.cnt < demand.count - 13)
 			printf("@@@ %d here at %dth when %lld\n", pather.cnt, a, Util::GetElapse());*/
 		loopcount++;
 	#endif
-		if (pather.cnt == demand.count)
-			fastDFSlessEND(npf);
+		if (nextlevel == demand.count)
+			fastDFSlessEND(&npf.paths[0], &npf.paths[npf.endcnt], nextlevel);
 		else
-			fastDFSless(npf);
+			fastDFSless(&npf.paths[npf.endcnt], &npf.paths[npf.cnt], nextlevel);
 
 		pather.lastCost += p->cost;//rollback lastCost
-		pather.cnt--;//rollback go though
-		pather.curCost -= p->cost;//rollback cost
 
 		if (npf.hasEnd)
 			pather.endcnt++;
@@ -350,11 +347,9 @@ void Searcher::fastDFSless(PathFirst &pf)
 	//finish this point
 }
 
-void Searcher::fastDFSlessEND(PathFirst &pf)
+void Searcher::fastDFSlessEND(PathData *p, const PathData *pend, const uint8_t curlevel)
 {
-	PathData *p = &pf.paths[0],
-		*pend = &pf.paths[pf.endcnt];
-	const PMap curPMAP = pather.pmap[pather.cnt];
+	const PMap curPMAP = pather.pmap[curlevel];
 	for (; p < pend; p++)
 	{
 		if (pather.lastCost <= p->cost)//cost too much
@@ -366,12 +361,10 @@ void Searcher::fastDFSlessEND(PathFirst &pf)
 #endif
 		//if (pather.lastCost > p.cost)//cost not too much
 		{//final step,find a shorter route
-			pather.minCost = pather.curCost + p->cost;
 			pather.lastCost = p->cost;//refresh lastCost
-			pather.pstack[pather.cnt++] = p;
+			pather.pstack[curlevel] = p;
 
 			FormRes();
-			pather.cnt--;//rollback go though
 		}
 		break;//according to order, later ones cost more
 	}
@@ -382,21 +375,22 @@ void Searcher::fastDFSlessEND(PathFirst &pf)
 void Searcher::FormRes()
 {
 	ResData res = ResData();
-	for (int a = 0; a < pather.cnt; a++)
+	for (int a = 0; a <= demand.count; a++)
 	{
 		PathData &p = *pather.pstack[a];
+		res.cost += p.cost;
 		for (int b = 0; b < p.cnt; b++)
 		{
 			res.idLink[res.count++] = p.mid[b];
 		}
 	}
-	res.cost = pather.minCost;
 	Util::WriteFile(&res);
 }
 
 void Searcher::StepLess()
 {
 	pather.cnt = 0;
-	pather.pmap[0].Clean();
-	fastDFSless(*path1[pmain.from]);
+	pather.pmap[1].Clean();
+	PathFirst *pf = path1[pmain.from];
+	fastDFSless(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], 0);
 }

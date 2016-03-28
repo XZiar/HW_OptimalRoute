@@ -30,7 +30,7 @@ struct ResData
 {
 	uint16_t idLink[638],
 		count = 0,
-		cost;
+		cost = 0;
 };
 
 class Util
