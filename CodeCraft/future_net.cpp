@@ -28,7 +28,8 @@ int main(int argc, char *argv[])
 				{
 					this_thread::sleep_for(chrono::milliseconds(1000));
 					uint64_t cur = searcher.loopcount;
-					printf("loop %9lld at %lldms\n", cur - last, Util::GetElapse());
+					uint64_t curt = Util::GetElapse();
+					printf("loop %6lldK at %5llds,avg:%6lldK/s\n", (cur - last) / 1000, curt / 1000, cur / curt);
 					last = cur;
 				}
 			}).detach();

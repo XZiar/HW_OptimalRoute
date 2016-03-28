@@ -308,13 +308,10 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 
 void Searcher::fastDFSless(PathFirst &pf)
 {
-	uint8_t a = pf.endcnt,
-		aend = pf.cnt;
-	PathData *p = &pf.paths[a];
-	PMap curPMAP = pather.pmap[pather.cnt];
-	/*_mm_prefetch((char*)&pather.pmap[pather.cnt], _MM_HINT_T1);
-	_mm_prefetch(((char*)&pather.pmap[pather.cnt]) + 64, _MM_HINT_T1);*/
-	for (; a++ < aend; p++)
+	PathData *p = &pf.paths[pf.endcnt],
+		*pend = &pf.paths[pf.cnt];
+	const PMap curPMAP = pather.pmap[pather.cnt];
+	for (; p < pend; p++)
 	{
 		if (pather.lastCost <= p->cost)//cost too much
 			break;//according to order, later ones cost more
@@ -355,21 +352,23 @@ void Searcher::fastDFSless(PathFirst &pf)
 
 void Searcher::fastDFSlessEND(PathFirst &pf)
 {
-	for (uint8_t a = 0; a < pf.endcnt;)
+	PathData *p = &pf.paths[0],
+		*pend = &pf.paths[pf.endcnt];
+	const PMap curPMAP = pather.pmap[pather.cnt];
+	for (; p < pend; p++)
 	{
-		PathData &p = pf.paths[a++];
-		if (pather.lastCost <= p.cost)//cost too much
+		if (pather.lastCost <= p->cost)//cost too much
 			break;//according to order, later ones cost more
-		if (!pather.pmap[pather.cnt].Test(p.pmap))//has overlap points
+		if (!curPMAP.Test(p->pmap))//has overlap points
 			continue;
 #ifndef FIN
 		anscnt++;
 #endif
 		//if (pather.lastCost > p.cost)//cost not too much
 		{//final step,find a shorter route
-			pather.minCost = pather.curCost + p.cost;
-			pather.lastCost = p.cost;//refresh lastCost
-			pather.pstack[pather.cnt++] = &p;
+			pather.minCost = pather.curCost + p->cost;
+			pather.lastCost = p->cost;//refresh lastCost
+			pather.pstack[pather.cnt++] = p;
 
 			FormRes();
 			pather.cnt--;//rollback go though
