@@ -199,6 +199,7 @@ static inline bool POutJudge(PointData::Out &o1, PointData::Out &o2)
 }
 void Searcher::Init()
 {
+	demand.count_1 = demand.count;
 	pmain.from = demand.idFrom, pmain.to = demand.idTo;
 	demand.idNeed[demand.count] = demand.idFrom;
 	pmain.pmap.Set(demand.idTo, true);
@@ -315,6 +316,7 @@ void Searcher::Step2()
 		for (uint16_t a = pf.endcnt; a < pf.cnt; a++)//each route
 		{
 			PathData &p1 = pf.paths[a];
+			
 			uint16_t objID = p1.to;
 			PathFirst &npf = *path1[objID];
 			for (uint16_t b = 0; b < npf.endcnt; b++)//each route to EndPoint
@@ -325,16 +327,16 @@ void Searcher::Step2()
 				if (!p1.pmap.Test(p2.pmap))//has overlap points
 					continue;
 				pf.paths[pf.end2cnt].Merge(p1, p2);//combine
-				if (pf.end2cnt++ > 718)//no space
+				if (pf.end2cnt++ > 714)//no space
 				{
-					sort(pf.paths + pf.cnt, pf.paths + 719);//sort to find out the longest
+					sort(pf.paths + pf.cnt, pf.paths + 715);//sort to find out the longest
 					maxcost = pf.paths[699].cost;//refresh max-cost
 					pf.end2cnt = 700;
 				}
 			}
 		}
-		sort(pf.paths + pf.cnt, pf.paths + pf.end2cnt, Separator);//final sort
-		pf.end2cnt = min(pf.end2cnt, 700);
+		sort(pf.paths + pf.cnt, pf.paths + pf.end2cnt);//final sort
+		pf.end2cnt = min(pf.end2cnt, 950);
 		//printf("%2d:%3hd paths,maxcost %3hd\n", a, pf.end2cnt, pf.paths[pf.end2cnt - 1].cost);
 	}
 }
@@ -363,8 +365,6 @@ uint16_t Searcher::fastDFSless(PathData *p, const PathData *pend, SimArg arg)
 		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
 
 	#ifndef FIN
-		/*if (pather.cnt < demand.count - 13)
-			printf("@@@ %d here at %dth when %lld\n", pather.cnt, a, Util::GetElapse());*/
 		loopcount++;
 		loopLVcnt[nextlevel]++;
 	#endif
@@ -372,6 +372,7 @@ uint16_t Searcher::fastDFSless(PathData *p, const PathData *pend, SimArg arg)
 		if (nextlevel != demand.count_1)
 			arg.RemainCost = p->cost + fastDFSless(&npf.paths[npf.endcnt], &npf.paths[npf.cnt], narg);
 		else
+			//arg.RemainCost = p->cost + fastDFSlessEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
 			arg.RemainCost = p->cost + fastDFSlessEND(&npf.paths[npf.cnt], &npf.paths[npf.end2cnt], narg);
 
 		/*if (npf.hasEnd)

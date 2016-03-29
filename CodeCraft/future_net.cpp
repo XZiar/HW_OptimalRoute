@@ -123,11 +123,9 @@ int main(int argc, char *argv[])
 	printf("Try depth %d and width %d\n", depth, width);
 
 	searcher.Step1(depth, width);
-
 	printf("First Cost: %lld ms\n", Util::GetElapse());
 	
 	searcher.Step2();
-
 	printf("Second Cost: %lld ms\n", Util::GetElapse());
 
 #ifndef FIN

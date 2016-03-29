@@ -36,8 +36,7 @@ struct _MM_ALIGN32 PathData
 	{
 		struct
 		{
-			uint16_t from, to, cost,
-				mid[28];
+			uint16_t from, to, cost, mid[28];
 			uint8_t cnt, isEnd;
 		};
 		__m256i datAVX[2];
@@ -67,14 +66,14 @@ private:
 public:
 	struct _MM_ALIGN32 PathFirst
 	{
-		PathData paths[720];
+		PathData paths[718];
 		uint16_t from,
 			maxcost = 0,
 			end2cnt = 0;
 		uint8_t cnt = 0,
 			endcnt = 0,
 			hasEnd = 0;
-	}paths1[52];
+	}paths1[51];
 	//int kkk = sizeof(PathFirst);
 	
 	void fastDFS(uint16_t curID);
