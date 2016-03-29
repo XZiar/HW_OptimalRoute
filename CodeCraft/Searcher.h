@@ -76,7 +76,7 @@ public:
 	}paths1[52];
 	//int kkk = sizeof(PathFirst);
 	
-	void fastDFS(uint16_t curID);
+	void fastDFS(PointData::Out *po, const PointData::Out *poend);
 
 	struct _MM_ALIGN32 PathLast
 	{
@@ -100,9 +100,7 @@ public:
 public:
 	PointData points[600];
 	DemandData demand;
-	uint64_t loopLVcnt[61];
-	uint64_t EPconflic = 0, loopcount = 0;
-	uint32_t anscnt = 0;
+	uint64_t loopLVcnt[61], EPconflic = 0, loopcount = 0;
 	Searcher();
 	~Searcher();
 

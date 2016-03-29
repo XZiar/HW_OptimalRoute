@@ -206,28 +206,26 @@ void Searcher::Init()
 	}
 }
 
-void Searcher::fastDFS(uint16_t curID)
+void Searcher::fastDFS(PointData::Out *po, const PointData::Out *poend)
 {
-	PointData &p = points[curID];
-	for (uint8_t a = 0; a < p.cnt; a++)
+	for (; po < poend; po++)
 	{
-		if (curPit->maxcost - curPath.cost < p.out[a].dis)//this is too long
+		if (curPit->maxcost - curPath.cost < po->dis)//this is too long
 			continue;//according to order, later ones are much longer
-		uint16_t &thisID = p.out[a].dest;
+		uint16_t thisID = po->dest;
 		if (curPath.pmap.Test(thisID))//already go through
 			continue;
 		if (pmain.pmap.Test(thisID))//reach need-point
 		{
-			curPath.cost += p.out[a].dis;//add cost
-			curPath.mid[curPath.cnt++] = p.out[a].rid;//add go though
+			curPath.cost += po->dis;//add cost
+			curPath.mid[curPath.cnt++] = po->rid;//add go though
 			curPath.pmap.Set(thisID, true);//set bitmap
 			curPath.to = thisID;//add destination
 			curPath.isEnd = (thisID == pmain.to ? 0x7f : 0x0);
 
-			curPit->paths[curPit->cnt] = curPath;//add path
-			if (curPit->cnt++ > 248)//has space
+			curPit->paths[curPit->cnt++] = curPath;//add path
+			if (curPit->cnt > 249)//has space
 			{//full,but cost lower
-				//anscnt++;
 				sort(curPit->paths, curPit->paths + 249);//sort to find out the longest
 				curPit->maxcost = curPit->paths[maxwide - 1].cost;//refresh max-cost
 				curPit->cnt = maxwide;
@@ -235,21 +233,22 @@ void Searcher::fastDFS(uint16_t curID)
 
 			curPath.pmap.Set(thisID, false);//clear bitmap
 			curPath.cnt--;//rollback go though
-			curPath.cost -= p.out[a].dis;//rollback cost
+			curPath.cost -= po->dis;//rollback cost
 			continue;
 		}
 		//reach normal-point
 		else if (curPath.cnt < maxlevel && thisID != pmain.from)//still can go deeper and not toward start-point
 		{
-			curPath.cost += p.out[a].dis;//add cost
-			curPath.mid[curPath.cnt++] = p.out[a].rid;//add go though
+			curPath.cost += po->dis;//add cost
+			curPath.mid[curPath.cnt++] = po->rid;//add go though
 			curPath.pmap.Set(thisID, true);//set bitmap
 			
-			fastDFS(thisID);//into next point
+			PointData &np = points[thisID];
+			fastDFS(&np.out[0], &np.out[np.cnt]);//into next point
 
 			curPath.pmap.Set(thisID, false);//clear bitmap
 			curPath.cnt--;//rollback go though
-			curPath.cost -= p.out[a].dis;//rollback cost
+			curPath.cost -= po->dis;//rollback cost
 			continue;
 		}
 	}
@@ -267,19 +266,19 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 	maxlevel = maxdepth;
 	maxwide = maxwidth;
 	pather.endcnt = 0;
-	anscnt = 0;
 	for (int a = 0; a <= demand.count; a++)
 	{
-		
-		curPit = path1[demand.idNeed[a]] = &paths1[a];
 		curPath.Clean();
-		pather.pmap[0].Clean();
-		curPit->maxcost = 160;
-		curPit->cnt = 0;
+		curPit = path1[demand.idNeed[a]] = &paths1[a];
+		curPit->maxcost = 100, curPit->cnt = 0;
 		curPit->from = curPath.from = demand.idNeed[a];
-		fastDFS(curPath.from);
+
+		PointData &np = points[curPath.from];
+		fastDFS(&np.out[0], &np.out[np.cnt]);
+		
 		sort(curPit->paths, curPit->paths + curPit->cnt, Separator);
 		curPit->cnt = min(curPit->cnt, maxwide);
+
 		int b = 0;
 		while (b < curPit->cnt && curPit->paths[b].isEnd)
 			b++;
@@ -309,12 +308,12 @@ uint16_t Searcher::fastDFSless(PathData *p, const PathData *pend, SimArg arg)
 
 		//reach next point
 		PathFirst &npf = *path1[p->to];
-		/*if (npf.hasEnd)
+		if (npf.hasEnd)
 		{
 			if (pather.endcnt == 1 && nextlevel < demand.count)//no way to dest now
 				continue;
 			pather.endcnt--;
-		}*/
+		}
 
 		pather.pstack[arg.curlevel] = p;//add go though
 		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
@@ -329,8 +328,8 @@ uint16_t Searcher::fastDFSless(PathData *p, const PathData *pend, SimArg arg)
 		else
 			arg.RemainCost = p->cost + fastDFSlessEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
 
-		/*if (npf.hasEnd)
-			pather.endcnt++;*/
+		if (npf.hasEnd)
+			pather.endcnt++;
 	}
 	//finish this point
 	return arg.RemainCost;//refresh lastCost
@@ -345,15 +344,11 @@ uint16_t Searcher::fastDFSlessEND(PathData *p, const PathData *pend, SimArg arg)
 			break;//according to order, later ones cost more
 		if (!curPMAP.Test(p->pmap))//has overlap points
 			continue;
-#ifndef FIN
-		anscnt++;
-#endif
-		//if (pather.lastCost > p.cost)//cost not too much
-		{//final step,find a shorter route
-			pather.pstack[arg.curlevel] = p;
 
-			FormRes();
-		}
+		//final step,find a shorter route
+		pather.pstack[arg.curlevel] = p;
+		FormRes();
+		
 		return p->cost;//according to order, later ones cost more
 	}
 	//finish this point
@@ -379,7 +374,7 @@ void Searcher::FormRes()
 void Searcher::StepLess()
 {
 	pather.cnt = 0;
-	pather.pmap[1].Clean();
+	pather.pmap[0].Clean();
 	PathFirst *pf = path1[pmain.from];
 	fastDFSless(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], SimArg{ 1000,0 });
 }
