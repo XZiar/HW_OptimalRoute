@@ -67,9 +67,10 @@ private:
 public:
 	struct _MM_ALIGN32 PathFirst
 	{
-		PathData paths[250];
+		PathData paths[720];
 		uint16_t from,
-			maxcost = 0;
+			maxcost = 0,
+			end2cnt = 0;
 		uint8_t cnt = 0,
 			endcnt = 0,
 			hasEnd = 0;
@@ -100,13 +101,15 @@ public:
 public:
 	PointData points[600];
 	DemandData demand;
-	uint64_t loopcount = 0;
+	uint64_t loopLVcnt[61];
+	uint64_t EPconflic = 0, loopcount = 0;
 	uint32_t anscnt = 0;
 	Searcher();
 	~Searcher();
 
 	void Init();
 	void Step1(uint8_t maxdepth, uint8_t maxwidth);
+	void Step2();
 	void StepLess();
 };
 

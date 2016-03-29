@@ -304,7 +304,40 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 		//printf("%dth,%d,sort:%d\n", a, curPath.from, anscnt);
 	}
 }
-
+void Searcher::Step2()
+{
+	demand.count_1 = demand.count - 1;
+	for (int a = 0; a < demand.count; a++)
+	{
+		PathFirst &pf = paths1[a];
+		pf.end2cnt = pf.cnt;
+		uint16_t maxcost = 200;
+		for (uint16_t a = pf.endcnt; a < pf.cnt; a++)//each route
+		{
+			PathData &p1 = pf.paths[a];
+			uint16_t objID = p1.to;
+			PathFirst &npf = *path1[objID];
+			for (uint16_t b = 0; b < npf.endcnt; b++)//each route to EndPoint
+			{
+				PathData &p2 = npf.paths[b];
+				if (maxcost <= p1.cost + p2.cost)//this is too long
+					continue;//according to order, later ones are much longer
+				if (!p1.pmap.Test(p2.pmap))//has overlap points
+					continue;
+				pf.paths[pf.end2cnt].Merge(p1, p2);//combine
+				if (pf.end2cnt++ > 718)//no space
+				{
+					sort(pf.paths + pf.cnt, pf.paths + 719);//sort to find out the longest
+					maxcost = pf.paths[699].cost;//refresh max-cost
+					pf.end2cnt = 700;
+				}
+			}
+		}
+		sort(pf.paths + pf.cnt, pf.paths + pf.end2cnt, Separator);//final sort
+		pf.end2cnt = min(pf.end2cnt, 700);
+		//printf("%2d:%3hd paths,maxcost %3hd\n", a, pf.end2cnt, pf.paths[pf.end2cnt - 1].cost);
+	}
+}
 
 uint16_t Searcher::fastDFSless(PathData *p, const PathData *pend, SimArg arg)
 {
@@ -319,12 +352,12 @@ uint16_t Searcher::fastDFSless(PathData *p, const PathData *pend, SimArg arg)
 
 		//reach next point
 		PathFirst &npf = *path1[p->to];
-		if (npf.hasEnd)
+		/*if (npf.hasEnd)
 		{
 			if (pather.endcnt == 1 && nextlevel < demand.count)//no way to dest now
 				continue;
 			pather.endcnt--;
-		}
+		}*/
 
 		pather.pstack[arg.curlevel] = p;//add go though
 		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
@@ -333,15 +366,16 @@ uint16_t Searcher::fastDFSless(PathData *p, const PathData *pend, SimArg arg)
 		/*if (pather.cnt < demand.count - 13)
 			printf("@@@ %d here at %dth when %lld\n", pather.cnt, a, Util::GetElapse());*/
 		loopcount++;
+		loopLVcnt[nextlevel]++;
 	#endif
 		const SimArg narg{ arg.RemainCost - p->cost,nextlevel };
-		if (nextlevel != demand.count)
+		if (nextlevel != demand.count_1)
 			arg.RemainCost = p->cost + fastDFSless(&npf.paths[npf.endcnt], &npf.paths[npf.cnt], narg);
 		else
-			arg.RemainCost = p->cost + fastDFSlessEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
+			arg.RemainCost = p->cost + fastDFSlessEND(&npf.paths[npf.cnt], &npf.paths[npf.end2cnt], narg);
 
-		if (npf.hasEnd)
-			pather.endcnt++;
+		/*if (npf.hasEnd)
+			pather.endcnt++;*/
 	}
 	//finish this point
 	return arg.RemainCost;//refresh lastCost
@@ -353,9 +387,15 @@ uint16_t Searcher::fastDFSlessEND(PathData *p, const PathData *pend, SimArg arg)
 	for (; p < pend; p++)
 	{
 		if (arg.RemainCost <= p->cost)//cost too much
+		{
+			//EPconflic++;
 			break;//according to order, later ones cost more
+		}
 		if (!curPMAP.Test(p->pmap))//has overlap points
+		{
+			
 			continue;
+		}
 #ifndef FIN
 		anscnt++;
 #endif
@@ -375,7 +415,7 @@ uint16_t Searcher::fastDFSlessEND(PathData *p, const PathData *pend, SimArg arg)
 void Searcher::FormRes()
 {
 	ResData res = ResData();
-	for (int a = 0; a <= demand.count; a++)
+	for (int a = 0; a <= demand.count_1; a++)
 	{
 		PathData &p = *pather.pstack[a];
 		res.cost += p.cost;
