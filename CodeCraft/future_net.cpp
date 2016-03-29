@@ -29,22 +29,28 @@ int main(int argc, char *argv[])
 					this_thread::sleep_for(chrono::milliseconds(1000));
 					uint64_t cur = searcher.loopcount;
 					uint64_t curt = Util::GetElapse();
-					printf("loop %6lldK at %5llds,avg:%6lldK/s\n", (cur - last) / 1000, curt / 1000, cur / curt);
+					printf("loop %5lldK at %4llds,avg:%5lldK/s\n", (cur - last) / 1000, curt / 1000, cur / curt);
 					last = cur;
 				}
 			}).detach();
 		}
-		else if (strcmp(argv[a], "timer2") == 0)
+		else if (strcmp(argv[a] + 2, "lvcnt") == 0)
 		{
+			uint8_t lv = (argv[a][0] - '0') * 10 + (argv[a][1] - '0');
 			thread([&]()
 			{
-				uint32_t last = 0;
+				uint64_t cur[4];
+				char str[255];
+				sprintf(str, "[%2d]%%5lld,[%2d]%%5lld,[%2d]%%5lld,[%2d]%%5lld at %%4llds\n", lv - 1, lv, lv + 1, lv + 2);
 				while (true)
 				{
 					this_thread::sleep_for(chrono::milliseconds(1000));
-					uint32_t cur = searcher.anscnt;
-					printf("ans get %2d of %4d at %lldms\n", cur - last, cur, Util::GetElapse());
-					last = cur;
+					cur[0] = searcher.loopLVcnt[lv - 1];
+					cur[1] = searcher.loopLVcnt[lv];
+					cur[2] = searcher.loopLVcnt[lv + 1];
+					cur[3] = searcher.loopLVcnt[lv + 2];
+					uint64_t curt = Util::GetElapse();
+					printf(str, cur[0], cur[1], cur[2], cur[3], curt / 1000);
 				}
 			}).detach();
 		}

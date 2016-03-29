@@ -15,9 +15,6 @@ PMap::PMap(const PMap & ori)
 	_mm256_store_si256(&datAVXi[0], _mm256_load_si256(&ori.datAVXi[0]));
 	_mm256_store_si256(&datAVXi[1], _mm256_load_si256(&ori.datAVXi[1]));
 	_mm256_store_si256(&datAVXi[2], _mm256_load_si256(&ori.datAVXi[2]));
-	/*_mm256_store_ps((float*)&datAVX[0], _mm256_load_ps((float*)&ori.datAVX[0]));
-	_mm256_store_ps((float*)&datAVX[1], _mm256_load_ps((float*)&ori.datAVX[1]));
-	_mm256_store_ps((float*)&datAVX[2], _mm256_load_ps((float*)&ori.datAVX[2]));*/
 #   else
 	_mm_store_si128(&datSSE[0], _mm_load_si128(&ori.datSSE[0]));
 	_mm_store_si128(&datSSE[1], _mm_load_si128(&ori.datSSE[1]));
@@ -36,9 +33,6 @@ PMap & PMap::operator=(const PMap & from)
 	_mm256_store_si256(&datAVXi[0], _mm256_load_si256(&from.datAVXi[0]));
 	_mm256_store_si256(&datAVXi[1], _mm256_load_si256(&from.datAVXi[1]));
 	_mm256_store_si256(&datAVXi[2], _mm256_load_si256(&from.datAVXi[2]));
-	/*_mm256_store_ps((float*)&datAVX[0], _mm256_load_ps((float*)&from.datAVX[0]));
-	_mm256_store_ps((float*)&datAVX[1], _mm256_load_ps((float*)&from.datAVX[1]));
-	_mm256_store_ps((float*)&datAVX[2], _mm256_load_ps((float*)&from.datAVX[2]));*/
 #   else
 	_mm_store_si128(&datSSE[0], _mm_load_si128(&from.datSSE[0]));
 	_mm_store_si128(&datSSE[1], _mm_load_si128(&from.datSSE[1]));
@@ -224,9 +218,6 @@ void Searcher::fastDFS(uint16_t curID)
 			continue;
 		if (pmain.pmap.Test(thisID))//reach need-point
 		{
-			//if (pather.pmap[curPath.cnt].Test(thisID))//become superset
-				//continue;
-			//pather.pmap[curPath.cnt].Set(thisID, true);//add blocker
 			curPath.cost += p.out[a].dis;//add cost
 			curPath.mid[curPath.cnt++] = p.out[a].rid;//add go though
 			curPath.pmap.Set(thisID, true);//set bitmap
@@ -251,14 +242,13 @@ void Searcher::fastDFS(uint16_t curID)
 		else if (curPath.cnt < maxlevel && thisID != pmain.from)//still can go deeper and not toward start-point
 		{
 			curPath.cost += p.out[a].dis;//add cost
-			//pather.pmap[curPath.cnt + 1] = pather.pmap[curPath.cnt];//copy blocker
 			curPath.mid[curPath.cnt++] = p.out[a].rid;//add go though
 			curPath.pmap.Set(thisID, true);//set bitmap
 			
 			fastDFS(thisID);//into next point
 
 			curPath.pmap.Set(thisID, false);//clear bitmap
-			curPath.cnt--;//rollback go though & blocker
+			curPath.cnt--;//rollback go though
 			curPath.cost -= p.out[a].dis;//rollback cost
 			continue;
 		}
@@ -319,19 +309,18 @@ uint16_t Searcher::fastDFSless(PathData *p, const PathData *pend, SimArg arg)
 
 		//reach next point
 		PathFirst &npf = *path1[p->to];
-		if (npf.hasEnd)
+		/*if (npf.hasEnd)
 		{
 			if (pather.endcnt == 1 && nextlevel < demand.count)//no way to dest now
 				continue;
 			pather.endcnt--;
-		}
+		}*/
 
 		pather.pstack[arg.curlevel] = p;//add go though
 		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
 
 	#ifndef FIN
-		/*if (pather.cnt < demand.count - 13)
-			printf("@@@ %d here at %dth when %lld\n", pather.cnt, a, Util::GetElapse());*/
+		loopLVcnt[nextlevel]++;
 		loopcount++;
 	#endif
 		const SimArg narg{ arg.RemainCost - p->cost,nextlevel };
@@ -340,8 +329,8 @@ uint16_t Searcher::fastDFSless(PathData *p, const PathData *pend, SimArg arg)
 		else
 			arg.RemainCost = p->cost + fastDFSlessEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
 
-		if (npf.hasEnd)
-			pather.endcnt++;
+		/*if (npf.hasEnd)
+			pather.endcnt++;*/
 	}
 	//finish this point
 	return arg.RemainCost;//refresh lastCost
