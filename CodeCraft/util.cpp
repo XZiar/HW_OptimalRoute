@@ -20,7 +20,7 @@ uint64_t Util::GetElapse()
 	return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - t_begin;
 }
 
-int16_t Util::ReadFile(const char* fname, PointData * points)
+int16_t Util::ReadFile(const char* fname, PointData * points, uint16_t &maxid)
 {
 	FILE * fp = fopen(fname, "r");
 	if (fp == NULL)
@@ -44,6 +44,8 @@ int16_t Util::ReadFile(const char* fname, PointData * points)
 				}
 				goto END_FIND;
 			}
+		maxid = max(maxid, idDest);
+		maxid = max(maxid, idSrc);
 		p.out[p.cnt].dest = idDest;
 		p.out[p.cnt].dis = cost;
 		p.out[p.cnt++].rid = idLink;

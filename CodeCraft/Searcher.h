@@ -1,6 +1,6 @@
 #pragma once
 #include "util.h"
-
+struct _MM_ALIGN32 PMap512;
 struct _MM_ALIGN32 PMap
 {
 	static const uint8_t mask[8];
@@ -22,6 +22,22 @@ struct _MM_ALIGN32 PMap
 	PMap & operator= (const PMap & from);
 	void Clean();
 	void Merge(const PMap & left, const PMap & right);
+	void Merge(const PMap512 & left, const PMap & right);
+	void Set(const uint16_t id, bool type);
+	bool Test(const uint16_t id) const;
+	bool Test(const PMap & right) const;
+};
+struct _MM_ALIGN32 PMap512
+{
+	static const uint16_t mask[16];
+	union
+	{
+		uint16_t datB[40];
+		__m256 datAVX[2];
+		__m256i datAVXi[2];
+	};
+	PMap512();
+	PMap512(const PMap & from);
 	void Set(const uint16_t id, bool type);
 	bool Test(const uint16_t id) const;
 	bool Test(const PMap & right) const;
@@ -91,8 +107,10 @@ public:
 	PathFirst * curPit;
 	uint8_t maxlevel, maxwide, toEPcnt;
 
-	uint16_t fastDFSless(PathData *p, const PathData *pend, SimArg arg);
-	uint16_t fastDFSlessEND(PathData *p, const PathData *pend, SimArg arg);
+	uint16_t fastDFSv768(PathData *p, const PathData *pend, SimArg arg);//VectorTest of 768bit
+	uint16_t fastDFSv512(PathData *p, const PathData *pend, SimArg arg);//VectorTest of 512bit
+	uint16_t fastDFSb512(PathData *p, const PathData *pend, SimArg arg);//BitTest of 512bit
+	uint16_t fastDFSEND(PathData *p, const PathData *pend, SimArg arg);
 
 	void FormRes();
 public:
@@ -104,6 +122,6 @@ public:
 
 	void Init();
 	void Step1(uint8_t maxdepth, uint8_t maxwidth);
-	void StepLess();
+	void StepEnd(const uint16_t maxid);
 };
 

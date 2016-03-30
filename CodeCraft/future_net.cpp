@@ -65,29 +65,28 @@ int main(int argc, char *argv[])
 		}
 	}
 #endif
+
 	const char * fn1 = fn_topo.c_str(),
 		* fn2 = fn_dmd.c_str(),
 		* fn3 = fn_out.c_str();
-
-
 	Util::Init(fn3);
-
+	uint16_t maxid = 0;
 
 	printf("Open topo File : %s\n", fn1);
-	int16_t linknum = Util::ReadFile(fn1, searcher.points);
+	int16_t linknum = Util::ReadFile(fn1, searcher.points, maxid);
 	if(linknum == -1)
 		printf("\t####\tError: open %s\n", fn1);
 	else
-		printf("get %d link from topo\n", linknum);
+		printf("get %hd link from topo, maxid id %hd\n", linknum, maxid);
 
 	printf("Open topo File : %s\n", fn2);
 	int16_t dmdnum = Util::ReadFile(fn2, searcher.demand);
 	if (dmdnum == -1)
 		printf("\t####\tError: open %s\n", fn2);
 	else
-		printf("get %d need from demand\n", dmdnum);
-
-	if (!isStay && dmdnum >= 38)
+		printf("get %hd need from demand\n", dmdnum);
+#ifndef FIN
+	if (!isStay)
 	{
 		thread thr = thread([]()
 		{
@@ -96,7 +95,7 @@ int main(int argc, char *argv[])
 		});
 		thr.detach();
 	}
-	
+#endif
 	printf("Loading Cost: %lld ms\n", Util::GetElapse());
 
 	searcher.Init();
@@ -104,17 +103,17 @@ int main(int argc, char *argv[])
 	uint16_t width, depth = 16;
 	{
 		uint16_t w1, w2;
-		w1 = sqrt(linknum * dmdnum) / 2.56;
-		w2 = dmdnum * 4.5;
+		w1 = uint16_t(sqrt(linknum * dmdnum * 1.0) / 2.56);
+		w2 = uint16_t(dmdnum * 4.5);
 		width = max(w1, w2);
 		width = min(width, 160);
 	}
-	printf("Try depth %d and width %d\n", depth, width);
+	printf("Try depth %hd and width %hd\n", depth, width);
 
 	searcher.Step1(depth, width);
 
 	printf("First Cost: %lld ms\n", Util::GetElapse());
-	//return 0;
+
 #ifndef FIN
 	if (isDebug)
 	{
@@ -141,8 +140,7 @@ int main(int argc, char *argv[])
 #endif
 
 
-	searcher.StepLess();
-
+	searcher.StepEnd(maxid);
 	printf("Totol: %lld ms\n", Util::GetElapse());
 	if(isStay)
 		getchar();

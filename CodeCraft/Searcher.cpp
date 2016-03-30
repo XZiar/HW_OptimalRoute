@@ -85,6 +85,13 @@ void PMap::Merge(const PMap & left, const PMap & right)
 		datL[a] = left.datL[a] | right.datL[a];
 #endif
 }
+void PMap::Merge(const PMap512 & left, const PMap & right)
+{
+	__m256 t0 = _mm256_or_ps(_mm256_load_ps((float*)&left.datAVX[0]), _mm256_load_ps((float*)&right.datAVX[0])),
+		t1 = _mm256_or_ps(_mm256_load_ps((float*)&left.datAVX[1]), _mm256_load_ps((float*)&right.datAVX[1]));
+	_mm256_store_ps((float*)&datAVX[0], t0);
+	_mm256_store_ps((float*)&datAVX[1], t1);
+}
 void PMap::Set(uint16_t id, bool type)
 {
 	if (type)
@@ -132,6 +139,42 @@ bool PMap::Test(const PMap & right) const
 	return true;
 #endif
 }
+
+const uint16_t PMap512::mask[16] = { 0x8000,0x4000,0x2000,0x1000,0x800,0x400,0x200,0x100,0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1 };
+PMap512::PMap512()
+{
+	const __m256 dat = _mm256_setzero_ps();
+	_mm256_store_ps((float*)&datAVX[0], dat);
+	_mm256_store_ps((float*)&datAVX[1], dat);
+}
+PMap512::PMap512(const PMap & from)
+{
+	_mm256_store_si256(&datAVXi[0], _mm256_load_si256(&from.datAVXi[0]));
+	_mm256_store_si256(&datAVXi[1], _mm256_load_si256(&from.datAVXi[1]));
+}
+void PMap512::Set(uint16_t id, bool type)
+{
+	if (type)
+		datB[id >> 4] |= mask[id & 0xf];
+	else
+		datB[id >> 4] &= ~mask[id & 0xf];
+}
+bool PMap512::Test(uint16_t id) const
+{
+	return (datB[id >> 4] & mask[id & 0xf]) != 0x0;
+}
+bool PMap512::Test(const PMap & right) const
+{
+	__m256 t0 = _mm256_and_ps(_mm256_load_ps((float*)&datAVX[0]), _mm256_load_ps((float*)&right.datAVX[0])),
+		t1 = _mm256_and_ps(_mm256_load_ps((float*)&datAVX[1]), _mm256_load_ps((float*)&right.datAVX[1]));
+	__m256i a0 = _mm256_castps_si256(t0),
+		a1 = _mm256_castps_si256(t1);
+	if (!_mm256_testz_si256(a0, a0))
+		return false;
+	return  _mm256_testz_si256(a1, a1);
+}
+
+
 
 
 PathData::PathData()
@@ -287,10 +330,77 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 }
 
 
-uint16_t Searcher::fastDFSless(PathData *p, const PathData *pend, SimArg arg)
+uint16_t Searcher::fastDFSv768(PathData *p, const PathData *pend, SimArg arg)
 {
-	static PMap dmdPMAP;
 	const PMap curPMAP = pather.pmap[arg.curlevel];
+	const uint8_t nextlevel = arg.curlevel + 1;
+	for (; p < pend; p++)
+	{
+		if (arg.RemainCost <= p->cost)//cost too much
+			break;//according to order, later ones cost more
+	#ifndef FIN
+		VTestCnt++;
+	#endif
+		if (!curPMAP.Test(p->pmap))//has overlap points
+			continue;
+
+		//reach next point
+		PathFirst &npf = *path1[p->to];
+		pather.pstack[arg.curlevel] = p;//add go though
+		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
+		const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
+	#ifndef FIN
+		loopLVcnt[nextlevel]++;
+		loopcount++;
+	#endif
+		if (nextlevel != demand.count)
+		{
+			if (narg.epcnt != 0)
+				arg.RemainCost = p->cost + fastDFSv768(&npf.paths[npf.endcnt], &npf.paths[npf.cnt], narg);
+		}
+		else
+			arg.RemainCost = p->cost + fastDFSEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
+	}//finish this point
+	return arg.RemainCost;//refresh lastCost
+}
+uint16_t Searcher::fastDFSv512(PathData *p, const PathData *pend, SimArg arg)
+{
+	const PMap512 curPMAP(pather.pmap[arg.curlevel]);
+	const uint8_t nextlevel = arg.curlevel + 1;
+	for (; p < pend; p++)
+	{
+		if (arg.RemainCost <= p->cost)//cost too much
+			break;//according to order, later ones cost more
+	#ifndef FIN
+		VTestCnt++;
+	#endif
+		if (!curPMAP.Test(p->pmap))//has overlap points
+			continue;
+
+		//reach next point
+		PathFirst &npf = *path1[p->to];
+		pather.pstack[arg.curlevel] = p;//add go though
+		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
+		const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
+	#ifndef FIN
+		loopLVcnt[nextlevel]++;
+		loopcount++;
+	#endif
+		if (nextlevel != demand.count)
+		{
+			if (narg.epcnt != 0)
+				arg.RemainCost = p->cost + fastDFSv512(&npf.paths[npf.endcnt], &npf.paths[npf.cnt], narg);
+		}
+		else
+			arg.RemainCost = p->cost + fastDFSEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
+	}
+	//finish this point
+	return arg.RemainCost;//refresh lastCost
+}
+uint16_t Searcher::fastDFSb512(PathData *p, const PathData *pend, SimArg arg)
+{
+	static PMap512 dmdPMAP;
+	const PMap512 curPMAP = pather.pmap[arg.curlevel];
 	const uint8_t nextlevel = arg.curlevel + 1;
 	for (; p < pend; p++)
 	{
@@ -306,33 +416,29 @@ uint16_t Searcher::fastDFSless(PathData *p, const PathData *pend, SimArg arg)
 
 		//reach next point
 		PathFirst &npf = *path1[p->to];
-		const SimArg narg{ arg.RemainCost - p->cost, nextlevel, arg.epcnt - npf.hasEnd };
-
 		pather.pstack[arg.curlevel] = p;//add go though
 		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
-
+		const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 	#ifndef FIN
 		loopLVcnt[nextlevel]++;
 		loopcount++;
 	#endif
-		
 		if (nextlevel != demand.count)
 		{
 			if (narg.epcnt != 0)
 			{
 				dmdPMAP.Set(p->to, true);
-				arg.RemainCost = p->cost + fastDFSless(&npf.paths[npf.endcnt], &npf.paths[npf.cnt], narg);
+				arg.RemainCost = p->cost + fastDFSb512(&npf.paths[npf.endcnt], &npf.paths[npf.cnt], narg);
 				dmdPMAP.Set(p->to, false);
 			}
 		}
 		else
-			arg.RemainCost = p->cost + fastDFSlessEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
+			arg.RemainCost = p->cost + fastDFSEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
 	}
 	//finish this point
 	return arg.RemainCost;//refresh lastCost
 }
-
-uint16_t Searcher::fastDFSlessEND(PathData *p, const PathData *pend, SimArg arg)
+uint16_t Searcher::fastDFSEND(PathData *p, const PathData *pend, SimArg arg)
 {
 	const PMap curPMAP = pather.pmap[arg.curlevel];
 	for (; p < pend; p++)
@@ -368,10 +474,24 @@ void Searcher::FormRes()
 	Util::WriteFile(&res);
 }
 
-void Searcher::StepLess()
+void Searcher::StepEnd(const uint16_t maxid)
 {
-	//pather.cnt = 0;
 	pather.pmap[0].Clean();
 	PathFirst *pf = path1[pmain.from];
-	fastDFSless(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], SimArg{ 1000, 0, toEPcnt });
+	const SimArg arg{ 1000, 0, toEPcnt };
+	if (demand.count < 32)
+	{
+		if(maxid > 510)//>512
+			fastDFSv768(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
+		else
+			fastDFSv512(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
+	}
+	else
+	{
+		if (maxid > 510)//>512
+			fastDFSv768(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
+		else
+			fastDFSb512(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
+	}
 }
+

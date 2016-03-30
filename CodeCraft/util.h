@@ -43,7 +43,7 @@ public:
 
 	static uint64_t GetElapse();
 
-	static int16_t ReadFile(const char * fname, PointData * points);
+	static int16_t ReadFile(const char * fname, PointData * points, uint16_t &maxid);
 	static int16_t ReadFile(const char * fname, DemandData & dmd);
 	static int16_t WriteFile(const ResData * path = nullptr);
 };
