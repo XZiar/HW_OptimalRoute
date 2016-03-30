@@ -8,21 +8,9 @@ PMap::PMap()
 }
 PMap::PMap(const PMap & ori)
 {
-#if defined(SSE)
-#   ifdef AVX
 	_mm256_store_si256(&datAVXi[0], _mm256_load_si256(&ori.datAVXi[0]));
 	_mm256_store_si256(&datAVXi[1], _mm256_load_si256(&ori.datAVXi[1]));
 	_mm256_store_si256(&datAVXi[2], _mm256_load_si256(&ori.datAVXi[2]));
-#   else
-	_mm_store_si128(&datSSE[0], _mm_load_si128(&ori.datSSE[0]));
-	_mm_store_si128(&datSSE[1], _mm_load_si128(&ori.datSSE[1]));
-	_mm_store_si128(&datSSE[2], _mm_load_si128(&ori.datSSE[2]));
-	_mm_store_si128(&datSSE[3], _mm_load_si128(&ori.datSSE[3]));
-	_mm_store_si128(&datSSE[4], _mm_load_si128(&ori.datSSE[4]));
-#   endif
-#else
-	memcpy(datB, ori.datB, sizeof(datB));
-#endif	
 }
 PMap & PMap::operator=(const PMap & from)
 {
@@ -91,6 +79,11 @@ void PMap::Merge(const PMap512 & left, const PMap & right)
 		t1 = _mm256_or_ps(_mm256_load_ps((float*)&left.datAVX[1]), _mm256_load_ps((float*)&right.datAVX[1]));
 	_mm256_store_ps((float*)&datAVX[0], t0);
 	_mm256_store_ps((float*)&datAVX[1], t1);
+}
+void PMap::Merge(const PMap256 & left, const PMap & right)
+{
+	__m256 t0 = _mm256_or_ps(_mm256_load_ps((float*)&left.datAVX), _mm256_load_ps((float*)&right.datAVX[0]));
+	_mm256_store_ps((float*)&datAVX[0], t0);
 }
 void PMap::Set(uint16_t id, bool type)
 {
@@ -174,7 +167,20 @@ bool PMap512::Test(const PMap & right) const
 	return  _mm256_testz_si256(a1, a1);
 }
 
-
+PMap256::PMap256()
+{
+	_mm256_store_ps((float*)&datAVX, _mm256_setzero_ps());
+}
+PMap256::PMap256(const PMap & from)
+{
+	_mm256_store_si256(&datAVXi, _mm256_load_si256(&from.datAVXi[0]));
+}
+bool PMap256::Test(const PMap & right) const
+{
+	__m256 t0 = _mm256_and_ps(_mm256_load_ps((float*)&datAVX), _mm256_load_ps((float*)&right.datAVX[0]));
+	__m256i a0 = _mm256_castps_si256(t0);
+	return _mm256_testz_si256(a0, a0);
+}
 
 
 PathData::PathData()
@@ -397,6 +403,40 @@ uint16_t Searcher::fastDFSv512(PathData *p, const PathData *pend, SimArg arg)
 	//finish this point
 	return arg.RemainCost;//refresh lastCost
 }
+uint16_t Searcher::fastDFSv256(PathData *p, const PathData *pend, SimArg arg)
+{
+	const PMap256 curPMAP(pather.pmap[arg.curlevel]);
+	const uint8_t nextlevel = arg.curlevel + 1;
+	for (; p < pend; p++)
+	{
+		if (arg.RemainCost <= p->cost)//cost too much
+			break;//according to order, later ones cost more
+	#ifndef FIN
+		VTestCnt++;
+	#endif
+		if (!curPMAP.Test(p->pmap))//has overlap points
+			continue;
+
+		//reach next point
+		PathFirst &npf = *path1[p->to];
+		pather.pstack[arg.curlevel] = p;//add go though
+		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
+		const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
+	#ifndef FIN
+		loopLVcnt[nextlevel]++;
+		loopcount++;
+	#endif
+		if (nextlevel != demand.count)
+		{
+			if (narg.epcnt != 0)
+				arg.RemainCost = p->cost + fastDFSv256(&npf.paths[npf.endcnt], &npf.paths[npf.cnt], narg);
+		}
+		else
+			arg.RemainCost = p->cost + fastDFSEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
+	}
+	//finish this point
+	return arg.RemainCost;//refresh lastCost
+}
 uint16_t Searcher::fastDFSb512(PathData *p, const PathData *pend, SimArg arg)
 {
 	static PMap512 dmdPMAP;
@@ -478,20 +518,31 @@ void Searcher::StepEnd(const uint16_t maxid)
 {
 	pather.pmap[0].Clean();
 	PathFirst *pf = path1[pmain.from];
-	const SimArg arg{ 1000, 0, toEPcnt };
-	if (demand.count < 32)
+	SimArg arg{ 1000, 0, toEPcnt };
+
+	if (maxid > 510)//>512
 	{
-		if(maxid > 510)//>512
-			fastDFSv768(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
-		else
-			fastDFSv512(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
+	#ifdef FIN
+		arg.RemainCost = 640;
+	#endif
+		fastDFSv768(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
 	}
-	else
+	else if (maxid > 256)//>256
 	{
-		if (maxid > 510)//>512
-			fastDFSv768(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
+	#ifdef FIN
+		arg.RemainCost = 500;
+	#endif
+		if (demand.count < 32)
+			fastDFSv512(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
 		else
 			fastDFSb512(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
+	}
+	else//<256
+	{	
+	#ifdef FIN
+		arg.RemainCost = 300;
+	#endif
+		fastDFSv256(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
 	}
 }
 

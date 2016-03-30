@@ -1,6 +1,7 @@
 #pragma once
 #include "util.h"
 struct _MM_ALIGN32 PMap512;
+struct _MM_ALIGN32 PMap256;
 struct _MM_ALIGN32 PMap
 {
 	static const uint8_t mask[8];
@@ -23,6 +24,7 @@ struct _MM_ALIGN32 PMap
 	void Clean();
 	void Merge(const PMap & left, const PMap & right);
 	void Merge(const PMap512 & left, const PMap & right);
+	void Merge(const PMap256 & left, const PMap & right);
 	void Set(const uint16_t id, bool type);
 	bool Test(const uint16_t id) const;
 	bool Test(const PMap & right) const;
@@ -40,6 +42,17 @@ struct _MM_ALIGN32 PMap512
 	PMap512(const PMap & from);
 	void Set(const uint16_t id, bool type);
 	bool Test(const uint16_t id) const;
+	bool Test(const PMap & right) const;
+};
+struct _MM_ALIGN32 PMap256
+{
+	union
+	{
+		__m256 datAVX;
+		__m256i datAVXi;
+	};
+	PMap256();
+	PMap256(const PMap & from);
 	bool Test(const PMap & right) const;
 };
 
@@ -109,6 +122,7 @@ public:
 
 	uint16_t fastDFSv768(PathData *p, const PathData *pend, SimArg arg);//VectorTest of 768bit
 	uint16_t fastDFSv512(PathData *p, const PathData *pend, SimArg arg);//VectorTest of 512bit
+	uint16_t fastDFSv256(PathData *p, const PathData *pend, SimArg arg);//VectorTest of 512bit
 	uint16_t fastDFSb512(PathData *p, const PathData *pend, SimArg arg);//BitTest of 512bit
 	uint16_t fastDFSEND(PathData *p, const PathData *pend, SimArg arg);
 
