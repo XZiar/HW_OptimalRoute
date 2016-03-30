@@ -265,7 +265,7 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 {
 	maxlevel = maxdepth;
 	maxwide = maxwidth;
-	pather.endcnt = 0;
+	toEPcnt = 0;
 	for (int a = 0; a <= demand.count; a++)
 	{
 		curPath.Clean();
@@ -285,8 +285,8 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 		curPit->endcnt = b;
 		if (b > 0 && a != demand.count)
 		{
-			curPit->hasEnd = 0x7f;
-			++pather.endcnt;
+			curPit->hasEnd = 0x1;
+			++toEPcnt;
 		}
 		else
 			curPit->hasEnd = 0x0;
@@ -308,12 +308,7 @@ uint16_t Searcher::fastDFSless(PathData *p, const PathData *pend, SimArg arg)
 
 		//reach next point
 		PathFirst &npf = *path1[p->to];
-		if (npf.hasEnd)
-		{
-			if (pather.endcnt == 1 && nextlevel < demand.count)//no way to dest now
-				continue;
-			pather.endcnt--;
-		}
+		const SimArg narg{ arg.RemainCost - p->cost, nextlevel, arg.epcnt - npf.hasEnd };
 
 		pather.pstack[arg.curlevel] = p;//add go though
 		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
@@ -322,14 +317,14 @@ uint16_t Searcher::fastDFSless(PathData *p, const PathData *pend, SimArg arg)
 		loopLVcnt[nextlevel]++;
 		loopcount++;
 	#endif
-		const SimArg narg{ arg.RemainCost - p->cost,nextlevel };
+		
 		if (nextlevel != demand.count)
-			arg.RemainCost = p->cost + fastDFSless(&npf.paths[npf.endcnt], &npf.paths[npf.cnt], narg);
+		{
+			if (narg.epcnt != 0)
+				arg.RemainCost = p->cost + fastDFSless(&npf.paths[npf.endcnt], &npf.paths[npf.cnt], narg);
+		}
 		else
 			arg.RemainCost = p->cost + fastDFSlessEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
-
-		if (npf.hasEnd)
-			pather.endcnt++;
 	}
 	//finish this point
 	return arg.RemainCost;//refresh lastCost
@@ -373,8 +368,8 @@ void Searcher::FormRes()
 
 void Searcher::StepLess()
 {
-	pather.cnt = 0;
+	//pather.cnt = 0;
 	pather.pmap[0].Clean();
 	PathFirst *pf = path1[pmain.from];
-	fastDFSless(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], SimArg{ 1000,0 });
+	fastDFSless(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], SimArg{ 1000, 0, toEPcnt });
 }

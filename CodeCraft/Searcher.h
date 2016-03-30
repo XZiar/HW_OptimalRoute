@@ -82,16 +82,16 @@ public:
 	{
 		PMap pmap[64];
 		PathData *pstack[60];
-		uint8_t cnt = 0,
-			endcnt = 0,
-			cntlim = 0;
+		//uint8_t cnt = 0,
+		//	endcnt = 0,
+		//	cntlim = 0;
 	}pather;
 
 	PathFirst *path1[600];
 	PathData pmain;
 	PathData curPath;
 	PathFirst * curPit;
-	uint8_t maxlevel, maxwide;
+	uint8_t maxlevel, maxwide, toEPcnt;
 
 	uint16_t fastDFSless(PathData *p, const PathData *pend, SimArg arg);
 	uint16_t fastDFSlessEND(PathData *p, const PathData *pend, SimArg arg);
