@@ -1,7 +1,13 @@
 #include "rely.h"
 #include "Searcher.h"
 
-const uint8_t PMap::mask[8] = { 0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1 };
+static const uint32_t PMPmask[32] =
+{
+	0x80000000,0x40000000,0x20000000,0x10000000,0x8000000,0x4000000,0x2000000,0x1000000,
+	0x800000,  0x400000,  0x200000,  0x100000,  0x80000,  0x40000,  0x20000,  0x10000,
+	0x8000,    0x4000,    0x2000,    0x1000,    0x800,    0x400,    0x200,    0x100,
+	0x80,      0x40,      0x20,      0x10,      0x8,      0x4,      0x2,      0x1
+};
 PMap::PMap()
 {
 	Clean();
@@ -16,9 +22,9 @@ PMap & PMap::operator=(const PMap & from)
 {
 #if defined(SSE)
 #   ifdef AVX
-	_mm256_store_si256(&datAVXi[0], _mm256_load_si256(&from.datAVXi[0]));
-	_mm256_store_si256(&datAVXi[1], _mm256_load_si256(&from.datAVXi[1]));
-	_mm256_store_si256(&datAVXi[2], _mm256_load_si256(&from.datAVXi[2]));
+	_mm256_stream_si256(&datAVXi[0], _mm256_load_si256(&from.datAVXi[0]));
+	_mm256_stream_si256(&datAVXi[1], _mm256_load_si256(&from.datAVXi[1]));
+	_mm256_stream_si256(&datAVXi[2], _mm256_load_si256(&from.datAVXi[2]));
 #   else
 	_mm_store_si128(&datSSE[0], _mm_load_si128(&from.datSSE[0]));
 	_mm_store_si128(&datSSE[1], _mm_load_si128(&from.datSSE[1]));
@@ -88,19 +94,13 @@ void PMap::Merge(const PMap256 & left, const PMap & right)
 void PMap::Set(uint16_t id, bool type)
 {
 	if (type)
-		datB[id >> 3] |= mask[id & 0x7];
+		datI[id >> 5] |= PMPmask[id & 0x1f];
 	else
-		datB[id >> 3] &= ~mask[id & 0x7];
-	/*long long * ptr = (long long*)&datL[id >> 6];
-	if (type)
-		_bittestandset64(ptr, id & 0x3f);
-	else
-		_bittestandreset64(ptr, id & 0x3f);*/
+		datI[id >> 5] &= ~PMPmask[id & 0x1f];
 }
 bool PMap::Test(uint16_t id) const
 {
-	return (datB[id >> 3] & mask[id & 0x7]) != 0x0;
-	/*return _bittest64((long long*)&datL[id >> 6], id & 0x3f);*/
+	return (datI[id >> 5] & PMPmask[id & 0x1f]) != 0x0;
 }
 bool PMap::Test(const PMap & right) const
 {
@@ -133,7 +133,7 @@ bool PMap::Test(const PMap & right) const
 #endif
 }
 
-const uint16_t PMap512::mask[16] = { 0x8000,0x4000,0x2000,0x1000,0x800,0x400,0x200,0x100,0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1 };
+
 PMap512::PMap512()
 {
 	const __m256 dat = _mm256_setzero_ps();
@@ -148,13 +148,13 @@ PMap512::PMap512(const PMap & from)
 void PMap512::Set(uint16_t id, bool type)
 {
 	if (type)
-		datB[id >> 4] |= mask[id & 0xf];
+		datI[id >> 5] |= PMPmask[id & 0x1f];
 	else
-		datB[id >> 4] &= ~mask[id & 0xf];
+		datI[id >> 5] &= ~PMPmask[id & 0x1f];
 }
 bool PMap512::Test(uint16_t id) const
 {
-	return (datB[id >> 4] & mask[id & 0xf]) != 0x0;
+	return (datI[id >> 5] & PMPmask[id & 0x1f]) != 0x0;
 }
 bool PMap512::Test(const PMap & right) const
 {
@@ -192,8 +192,8 @@ PathData & PathData::operator=(const PathData & from)
 {
 	pmap = from.pmap;
 #ifdef AVX
-	_mm256_store_si256(&datAVX[0], _mm256_load_si256(&from.datAVX[0]));
-	_mm256_store_si256(&datAVX[1], _mm256_load_si256(&from.datAVX[1]));
+	_mm256_stream_si256(&datAVX[0], _mm256_load_si256(&from.datAVX[0]));
+	_mm256_stream_si256(&datAVX[1], _mm256_load_si256(&from.datAVX[1]));
 #else
 	memcpy(datB, ori.datB, sizeof(datB));
 #endif	
@@ -267,7 +267,7 @@ void Searcher::fastDFS(PointData::Out *po, const PointData::Out *poend)
 			curPit->paths[curPit->cnt++] = curPath;//add path
 			if (curPit->cnt > 249)//has space
 			{//full,but cost lower
-				sort(curPit->paths, curPit->paths + 249);//sort to find out the longest
+				sort(curPit->paths, curPit->paths + 250);//sort to find out the longest
 				curPit->maxcost = curPit->paths[maxwide - 1].cost;//refresh max-cost
 				curPit->cnt = maxwide;
 			}
@@ -338,7 +338,7 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 
 uint16_t Searcher::fastDFSv768(PathData *p, const PathData *pend, SimArg arg)
 {
-	const PMap curPMAP = pather.pmap[arg.curlevel];
+	const PMap curPMAP(pather.pmap[arg.curlevel]);
 	const uint8_t nextlevel = arg.curlevel + 1;
 	for (; p < pend; p++)
 	{
@@ -440,7 +440,7 @@ uint16_t Searcher::fastDFSv256(PathData *p, const PathData *pend, SimArg arg)
 uint16_t Searcher::fastDFSb512(PathData *p, const PathData *pend, SimArg arg)
 {
 	static PMap512 dmdPMAP;
-	const PMap512 curPMAP = pather.pmap[arg.curlevel];
+	const PMap512 curPMAP(pather.pmap[arg.curlevel]);
 	const uint8_t nextlevel = arg.curlevel + 1;
 	for (; p < pend; p++)
 	{
@@ -480,7 +480,7 @@ uint16_t Searcher::fastDFSb512(PathData *p, const PathData *pend, SimArg arg)
 }
 uint16_t Searcher::fastDFSEND(PathData *p, const PathData *pend, SimArg arg)
 {
-	const PMap curPMAP = pather.pmap[arg.curlevel];
+	const PMap curPMAP(pather.pmap[arg.curlevel]);
 	for (; p < pend; p++)
 	{
 		if (arg.RemainCost <= p->cost)//cost too much
@@ -532,7 +532,7 @@ void Searcher::StepEnd(const uint16_t maxid)
 	#ifdef FIN
 		arg.RemainCost = 500;
 	#endif
-		if (demand.count < 32)
+		if (maxid / demand.count < 20)
 			fastDFSv512(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
 		else
 			fastDFSb512(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);

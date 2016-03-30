@@ -4,10 +4,9 @@ struct _MM_ALIGN32 PMap512;
 struct _MM_ALIGN32 PMap256;
 struct _MM_ALIGN32 PMap
 {
-	static const uint8_t mask[8];
 	union
 	{
-		uint8_t datB[80];
+		uint32_t datI[20];
 		uint64_t datL[10];
 #if defined(SSE)
 		__m128i datSSE[5];
@@ -31,10 +30,9 @@ struct _MM_ALIGN32 PMap
 };
 struct _MM_ALIGN32 PMap512
 {
-	static const uint16_t mask[16];
 	union
 	{
-		uint16_t datB[40];
+		uint32_t datI[16];
 		__m256 datAVX[2];
 		__m256i datAVXi[2];
 	};
