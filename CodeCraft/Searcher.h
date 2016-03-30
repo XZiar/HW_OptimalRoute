@@ -3,9 +3,7 @@
 
 struct _MM_ALIGN32 PMap
 {
-#if defined(__GNUC__)
 	static const uint8_t mask[8];
-#endif
 	union
 	{
 		uint8_t datB[80];
@@ -100,7 +98,7 @@ public:
 public:
 	PointData points[600];
 	DemandData demand;
-	uint64_t loopLVcnt[61], EPconflic = 0, loopcount = 0;
+	uint64_t loopLVcnt[60], EPconflic = 0, VTestCnt = 0, loopcount = 0;
 	Searcher();
 	~Searcher();
 

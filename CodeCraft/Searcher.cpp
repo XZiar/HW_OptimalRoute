@@ -1,9 +1,7 @@
 #include "rely.h"
 #include "Searcher.h"
 
-#if defined(__GNUC__)
 const uint8_t PMap::mask[8] = { 0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1 };
-#endif
 PMap::PMap()
 {
 	Clean();
@@ -89,26 +87,20 @@ void PMap::Merge(const PMap & left, const PMap & right)
 }
 void PMap::Set(uint16_t id, bool type)
 {
-#if defined(__GNUC__)
 	if (type)
 		datB[id >> 3] |= mask[id & 0x7];
 	else
 		datB[id >> 3] &= ~mask[id & 0x7];
-#else
-	long long * ptr = (long long*)&datL[id >> 6];
+	/*long long * ptr = (long long*)&datL[id >> 6];
 	if (type)
 		_bittestandset64(ptr, id & 0x3f);
 	else
-		_bittestandreset64(ptr, id & 0x3f);
-#endif
+		_bittestandreset64(ptr, id & 0x3f);*/
 }
 bool PMap::Test(uint16_t id) const
 {
-#if defined(__GNUC__)
 	return (datB[id >> 3] & mask[id & 0x7]) != 0x0;
-#else
-	return _bittest64((long long*)&datL[id >> 6], id & 0x3f);
-#endif
+	/*return _bittest64((long long*)&datL[id >> 6], id & 0x3f);*/
 }
 bool PMap::Test(const PMap & right) const
 {
@@ -297,12 +289,18 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 
 uint16_t Searcher::fastDFSless(PathData *p, const PathData *pend, SimArg arg)
 {
+	static PMap dmdPMAP;
 	const PMap curPMAP = pather.pmap[arg.curlevel];
 	const uint8_t nextlevel = arg.curlevel + 1;
 	for (; p < pend; p++)
 	{
 		if (arg.RemainCost <= p->cost)//cost too much
 			break;//according to order, later ones cost more
+	#ifndef FIN
+		VTestCnt++;
+	#endif
+		if (dmdPMAP.Test(p->to))//already go through
+			continue;
 		if (!curPMAP.Test(p->pmap))//has overlap points
 			continue;
 
@@ -321,7 +319,11 @@ uint16_t Searcher::fastDFSless(PathData *p, const PathData *pend, SimArg arg)
 		if (nextlevel != demand.count)
 		{
 			if (narg.epcnt != 0)
+			{
+				dmdPMAP.Set(p->to, true);
 				arg.RemainCost = p->cost + fastDFSless(&npf.paths[npf.endcnt], &npf.paths[npf.cnt], narg);
+				dmdPMAP.Set(p->to, false);
+			}
 		}
 		else
 			arg.RemainCost = p->cost + fastDFSlessEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);

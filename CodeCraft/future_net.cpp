@@ -23,14 +23,17 @@ int main(int argc, char *argv[])
 		{
 			thread([&]()
 			{
-				uint64_t last = 0;
+				uint64_t lastLP = 0, lastVT = 0;
 				while (true)
 				{
 					this_thread::sleep_for(chrono::milliseconds(1000));
 					uint64_t cur = searcher.loopcount;
 					uint64_t curt = Util::GetElapse();
-					printf("loop %5lldK at %4llds,avg:%5lldK/s\n", (cur - last) / 1000, curt / 1000, cur / curt);
-					last = cur;
+					printf("loop %5lldK at %4llds,avg:%5lldK/s\n", (cur - lastLP) / 1000, curt / 1000, cur / curt);
+					lastLP = cur;
+					cur = searcher.VTestCnt;
+					printf("test %5lldM at %4llds,avg:%5lldM/s\n", (cur - lastVT) / 1000000, curt / 1000, cur / curt / 1000);
+					lastVT = cur;
 				}
 			}).detach();
 		}
