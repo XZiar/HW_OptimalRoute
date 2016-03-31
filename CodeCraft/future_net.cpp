@@ -37,24 +37,6 @@ int main(int argc, char *argv[])
 				}
 			}).detach();
 		}
-		else if (strcmp(argv[a], "timer2") == 0)
-		{
-			thread([&]()
-			{
-				uint64_t lastLP = 0, lastVT = 0;
-				while (true)
-				{
-					this_thread::sleep_for(chrono::milliseconds(1000));
-					uint64_t cur = searcher.loopcount;
-					uint64_t curt = Util::GetElapse();
-					printf("vtst %5lldM at %4llds,avg:%5lldM/s\n", (cur - lastLP) / 1000000, curt / 1000, cur / curt / 1000);
-					lastLP = cur;
-					cur = searcher.VTestCnt;
-					printf("ecut %5lldM at %4llds,avg:%5lldM/s\n", (cur - lastVT) / 1000000, curt / 1000, cur / curt / 1000);
-					lastVT = cur;
-				}
-			}).detach();
-		}
 		else if (strcmp(argv[a] + 2, "lvcnt") == 0)
 		{
 			uint8_t lv = (argv[a][0] - '0') * 10 + (argv[a][1] - '0');
@@ -121,10 +103,10 @@ int main(int argc, char *argv[])
 	uint16_t width, depth = 16;
 	{
 		uint16_t w1, w2;
-		w1 = uint16_t(sqrt(linknum * dmdnum * 1.0) / 2.4);
-		w2 = uint16_t(dmdnum * 4.8);
+		w1 = uint16_t(sqrt(linknum * dmdnum * 1.0) / 2.2);
+		w2 = uint16_t(dmdnum * 5);
 		width = max(w1, w2);
-		width = min(width, 160);
+		width = min(width, 168);
 	}
 	printf("Try depth %hd and width %hd\n", depth, width);
 

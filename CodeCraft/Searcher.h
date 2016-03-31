@@ -109,20 +109,18 @@ public:
 	{
 		PMap pmap[64];
 		PathData *pstack[60];
-		//uint8_t cnt = 0,
-		//	endcnt = 0,
-		//	cntlim = 0;
 	}pather;
 
 	PathFirst *path1[600];
 	PathData pmain;
 	PathData curPath;
 	PathFirst * curPit;
-	uint8_t maxlevel, maxwide, toEPcnt;
+	uint8_t maxlevel, maxwide, limcut, toEPcnt;
 
 	uint16_t fastDFSv768(PathData * __restrict p, const PathData * __restrict pend, SimArg arg);//VectorTest of 768bit
+	uint16_t fastDFSv768e(PathData * __restrict pcur[], PathData * __restrict pend[], SimArg arg);//Ecut-VectorTest of 768bit
 	uint16_t fastDFSv512(PathData * __restrict p, const PathData * __restrict pend, SimArg arg);//VectorTest of 512bit
-	uint16_t fastDFSv512e(PathData * __restrict pcur[], PathData * __restrict pend[], SimArg arg);//VectorTest of 512bit
+	uint16_t fastDFSv512e(PathData * __restrict pcur[], PathData * __restrict pend[], SimArg arg);//Ecut-VectorTest of 512bit
 	uint16_t fastDFSv256(PathData * __restrict p, const PathData * __restrict pend, SimArg arg);//VectorTest of 512bit
 	uint16_t fastDFSb512(PathData * __restrict p, const PathData * __restrict pend, SimArg arg);//BitTest of 512bit
 	uint16_t fastDFSEND(PathData * __restrict p, const PathData * __restrict pend, SimArg arg);
