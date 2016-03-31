@@ -338,7 +338,7 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 
 uint16_t Searcher::fastDFSv768(PathData * __restrict p, const PathData * __restrict pend, SimArg arg)
 {
-	const PMap curPMAP(pather.pmap[arg.curlevel]);
+	const PMap curPMAP(TMPpmap);
 	const uint8_t nextlevel = arg.curlevel + 1;
 	if (arg.curlevel == limcut)
 	{//early cut
@@ -374,8 +374,8 @@ uint16_t Searcher::fastDFSv768(PathData * __restrict p, const PathData * __restr
 
 		//reach next point
 		PathFirst &npf = *path1[p->to];
-		pather.pstack[arg.curlevel] = p;//add go though
-		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
+		pstack[arg.curlevel] = p;//add go though
+		TMPpmap.Merge(curPMAP, p->pmap);
 		const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 	#ifndef FIN
 		loopLVcnt[nextlevel]++;
@@ -393,7 +393,8 @@ uint16_t Searcher::fastDFSv768(PathData * __restrict p, const PathData * __restr
 }
 uint16_t Searcher::fastDFSv768e(PathData * __restrict pcur[], PathData * __restrict pend[], SimArg arg)
 {
-	const PMap curPMAP(pather.pmap[arg.curlevel]);
+	static PMap dmdPMAP;
+	const PMap curPMAP(TMPpmap);
 	const uint8_t nextlevel = arg.curlevel + 1;
 
 	for (; pcur < pend; pcur++)
@@ -404,12 +405,14 @@ uint16_t Searcher::fastDFSv768e(PathData * __restrict pcur[], PathData * __restr
 	#ifndef FIN
 		VTestCnt++;
 	#endif
+		if (dmdPMAP.Test(p->to))//already go through
+			continue;
 		if (!curPMAP.Test(p->pmap))//has overlap points
 			continue;
 		//reach next point
 		PathFirst &npf = *path1[p->to];
-		pather.pstack[arg.curlevel] = (PathData *)p;//add go though
-		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
+		pstack[arg.curlevel] = (PathData *)p;//add go though
+		TMPpmap.Merge(curPMAP, p->pmap);
 		const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 	#ifndef FIN
 		loopLVcnt[nextlevel]++;
@@ -417,8 +420,12 @@ uint16_t Searcher::fastDFSv768e(PathData * __restrict pcur[], PathData * __restr
 	#endif
 		if (nextlevel != demand.count)
 		{
-			if (narg.epcnt != 0)
+			if (npf.ecnt != 0 && narg.epcnt != 0)
+			{
+				dmdPMAP.Set(p->to, true);
 				arg.RemainCost = p->cost + fastDFSv768e(&npf.epaths[0], &npf.epaths[npf.ecnt], narg);
+				dmdPMAP.Set(p->to, false);
+			}
 		}
 		else
 			arg.RemainCost = p->cost + fastDFSEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
@@ -428,7 +435,7 @@ uint16_t Searcher::fastDFSv768e(PathData * __restrict pcur[], PathData * __restr
 }
 uint16_t Searcher::fastDFSv512(PathData * __restrict p, const PathData * __restrict pend, SimArg arg)
 {
-	const PMap512 curPMAP(pather.pmap[arg.curlevel]);
+	const PMap512 curPMAP(TMPpmap);
 	const uint8_t nextlevel = arg.curlevel + 1;
 	if (arg.curlevel == limcut)
 	{//early cut
@@ -463,8 +470,8 @@ uint16_t Searcher::fastDFSv512(PathData * __restrict p, const PathData * __restr
 			continue;
 		//reach next point
 		PathFirst &npf = *path1[p->to];
-		pather.pstack[arg.curlevel] = p;//add go though
-		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
+		pstack[arg.curlevel] = p;//add go though
+		TMPpmap.Merge(curPMAP, p->pmap);
 		const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 	#ifndef FIN
 		loopLVcnt[nextlevel]++;
@@ -483,7 +490,8 @@ uint16_t Searcher::fastDFSv512(PathData * __restrict p, const PathData * __restr
 }
 uint16_t Searcher::fastDFSv512e(PathData * __restrict pcur[], PathData * __restrict pend[], SimArg arg)
 {
-	const PMap512 curPMAP(pather.pmap[arg.curlevel]);
+	static PMap512 dmdPMAP;
+	const PMap512 curPMAP(TMPpmap);
 	const uint8_t nextlevel = arg.curlevel + 1;
 
 	for (; pcur < pend; pcur++)
@@ -494,12 +502,14 @@ uint16_t Searcher::fastDFSv512e(PathData * __restrict pcur[], PathData * __restr
 	#ifndef FIN
 		VTestCnt++;
 	#endif
+		if (dmdPMAP.Test(p->to))//already go through
+			continue;
 		if (!curPMAP.Test(p->pmap))//has overlap points
 			continue;
 		//reach next point
 		PathFirst &npf = *path1[p->to];
-		pather.pstack[arg.curlevel] = (PathData *)p;//add go though
-		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
+		pstack[arg.curlevel] = (PathData *)p;//add go though
+		TMPpmap.Merge(curPMAP, p->pmap);
 		const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 	#ifndef FIN
 		loopLVcnt[nextlevel]++;
@@ -507,8 +517,12 @@ uint16_t Searcher::fastDFSv512e(PathData * __restrict pcur[], PathData * __restr
 	#endif
 		if (nextlevel != demand.count)
 		{
-			if (narg.epcnt != 0)
+			if (npf.ecnt != 0 && narg.epcnt != 0)
+			{
+				dmdPMAP.Set(p->to, true);
 				arg.RemainCost = p->cost + fastDFSv512e(&npf.epaths[0], &npf.epaths[npf.ecnt], narg);
+				dmdPMAP.Set(p->to, false);
+			}
 		}
 		else
 			arg.RemainCost = p->cost + fastDFSEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
@@ -518,7 +532,7 @@ uint16_t Searcher::fastDFSv512e(PathData * __restrict pcur[], PathData * __restr
 }
 uint16_t Searcher::fastDFSv256(PathData * __restrict p, const PathData * __restrict pend, SimArg arg)
 {
-	const PMap256 curPMAP(pather.pmap[arg.curlevel]);
+	const PMap256 curPMAP(TMPpmap);
 	const uint8_t nextlevel = arg.curlevel + 1;
 	for (; p < pend; p++)
 	{
@@ -532,8 +546,8 @@ uint16_t Searcher::fastDFSv256(PathData * __restrict p, const PathData * __restr
 
 		//reach next point
 		PathFirst &npf = *path1[p->to];
-		pather.pstack[arg.curlevel] = p;//add go though
-		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
+		pstack[arg.curlevel] = p;//add go though
+		TMPpmap.Merge(curPMAP, p->pmap);
 		const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 	#ifndef FIN
 		loopLVcnt[nextlevel]++;
@@ -550,50 +564,9 @@ uint16_t Searcher::fastDFSv256(PathData * __restrict p, const PathData * __restr
 	//finish this point
 	return arg.RemainCost;//refresh lastCost
 }
-uint16_t Searcher::fastDFSb512(PathData * __restrict p, const PathData * __restrict pend, SimArg arg)
-{
-	static PMap512 dmdPMAP;
-	const PMap512 curPMAP(pather.pmap[arg.curlevel]);
-	const uint8_t nextlevel = arg.curlevel + 1;
-	for (; p < pend; p++)
-	{
-		if (arg.RemainCost <= p->cost)//cost too much
-			break;//according to order, later ones cost more
-	#ifndef FIN
-		VTestCnt++;
-	#endif
-		if (dmdPMAP.Test(p->to))//already go through
-			continue;
-		if (!curPMAP.Test(p->pmap))//has overlap points
-			continue;
-
-		//reach next point
-		PathFirst &npf = *path1[p->to];
-		pather.pstack[arg.curlevel] = p;//add go though
-		pather.pmap[nextlevel].Merge(curPMAP, p->pmap);
-		const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
-	#ifndef FIN
-		loopLVcnt[nextlevel]++;
-		loopcount++;
-	#endif
-		if (nextlevel != demand.count)
-		{
-			if (narg.epcnt != 0)
-			{
-				dmdPMAP.Set(p->to, true);
-				arg.RemainCost = p->cost + fastDFSb512(&npf.paths[npf.endcnt], &npf.paths[npf.cnt], narg);
-				dmdPMAP.Set(p->to, false);
-			}
-		}
-		else
-			arg.RemainCost = p->cost + fastDFSEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
-	}
-	//finish this point
-	return arg.RemainCost;//refresh lastCost
-}
 uint16_t Searcher::fastDFSEND(PathData * __restrict p, const PathData * __restrict pend, SimArg arg)
 {
-	const PMap curPMAP(pather.pmap[arg.curlevel]);
+	const PMap curPMAP(TMPpmap);
 	for (; p < pend; p++)
 	{
 		if (arg.RemainCost <= p->cost)//cost too much
@@ -602,7 +575,7 @@ uint16_t Searcher::fastDFSEND(PathData * __restrict p, const PathData * __restri
 			continue;
 
 		//final step,find a shorter route
-		pather.pstack[arg.curlevel] = p;
+		pstack[arg.curlevel] = p;
 		FormRes();
 		
 		return p->cost;//according to order, later ones cost more
@@ -617,7 +590,7 @@ void Searcher::FormRes()
 	ResData res = ResData();
 	for (int a = 0; a <= demand.count; a++)
 	{
-		PathData &p = *pather.pstack[a];
+		PathData &p = *pstack[a];
 		res.cost += p.cost;
 		for (int b = 0; b < p.cnt; b++)
 		{
@@ -629,7 +602,7 @@ void Searcher::FormRes()
 
 void Searcher::StepEnd(const uint16_t maxid)
 {
-	pather.pmap[0].Clean();
+	TMPpmap.Clean();
 	PathFirst *pf = path1[pmain.from];
 	SimArg arg{ 1000, 0, toEPcnt };
 

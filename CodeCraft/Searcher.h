@@ -105,15 +105,12 @@ public:
 	
 	void fastDFS(PointData::Out *po, const PointData::Out *poend);
 
-	struct _MM_ALIGN32 PathLast
-	{
-		PMap pmap[64];
-		PathData *pstack[60];
-	}pather;
+	PathData *pstack[60];
 
 	PathFirst *path1[600];
 	PathData pmain;
 	PathData curPath;
+	PMap TMPpmap;
 	PathFirst * curPit;
 	uint8_t maxlevel, maxwide, limcut, toEPcnt;
 
@@ -121,8 +118,7 @@ public:
 	uint16_t fastDFSv768e(PathData * __restrict pcur[], PathData * __restrict pend[], SimArg arg);//Ecut-VectorTest of 768bit
 	uint16_t fastDFSv512(PathData * __restrict p, const PathData * __restrict pend, SimArg arg);//VectorTest of 512bit
 	uint16_t fastDFSv512e(PathData * __restrict pcur[], PathData * __restrict pend[], SimArg arg);//Ecut-VectorTest of 512bit
-	uint16_t fastDFSv256(PathData * __restrict p, const PathData * __restrict pend, SimArg arg);//VectorTest of 512bit
-	uint16_t fastDFSb512(PathData * __restrict p, const PathData * __restrict pend, SimArg arg);//BitTest of 512bit
+	uint16_t fastDFSv256(PathData * __restrict p, const PathData * __restrict pend, SimArg arg);//VectorTest of 256bit
 	uint16_t fastDFSEND(PathData * __restrict p, const PathData * __restrict pend, SimArg arg);
 
 	void FormRes();

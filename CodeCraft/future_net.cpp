@@ -103,10 +103,10 @@ int main(int argc, char *argv[])
 	uint16_t width, depth = 16;
 	{
 		uint16_t w1, w2;
-		w1 = uint16_t(sqrt(linknum * dmdnum * 1.0) / 2.2);
-		w2 = uint16_t(dmdnum * 5);
+		w1 = uint16_t(sqrt(linknum * dmdnum * 1.0) / 2.4);
+		w2 = uint16_t(dmdnum * 4.8);
 		width = max(w1, w2);
-		width = min(width, 168);
+		width = min(width, 160);
 	}
 	printf("Try depth %hd and width %hd\n", depth, width);
 
