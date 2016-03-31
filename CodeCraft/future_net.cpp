@@ -37,6 +37,24 @@ int main(int argc, char *argv[])
 				}
 			}).detach();
 		}
+		else if (strcmp(argv[a], "timer2") == 0)
+		{
+			thread([&]()
+			{
+				uint64_t lastLP = 0, lastVT = 0;
+				while (true)
+				{
+					this_thread::sleep_for(chrono::milliseconds(1000));
+					uint64_t cur = searcher.loopcount;
+					uint64_t curt = Util::GetElapse();
+					printf("vtst %5lldM at %4llds,avg:%5lldM/s\n", (cur - lastLP) / 1000000, curt / 1000, cur / curt / 1000);
+					lastLP = cur;
+					cur = searcher.VTestCnt;
+					printf("ecut %5lldM at %4llds,avg:%5lldM/s\n", (cur - lastVT) / 1000000, curt / 1000, cur / curt / 1000);
+					lastVT = cur;
+				}
+			}).detach();
+		}
 		else if (strcmp(argv[a] + 2, "lvcnt") == 0)
 		{
 			uint8_t lv = (argv[a][0] - '0') * 10 + (argv[a][1] - '0');

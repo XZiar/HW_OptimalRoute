@@ -24,7 +24,8 @@ struct DemandData
 	uint16_t idFrom,
 		idTo,
 		count,
-		idNeed[61];
+		limcut,
+		idNeed[60];
 };
 struct ResData
 {

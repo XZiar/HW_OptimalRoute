@@ -62,8 +62,8 @@ struct _MM_ALIGN32 PathData
 		struct
 		{
 			uint16_t from, to, cost,
-				mid[28];
-			uint8_t cnt, isEnd;
+				mid[27];
+			uint8_t cnt, isEnd, ecut;
 		};
 		__m256i datAVX[2];
 	};
@@ -93,9 +93,11 @@ public:
 	struct _MM_ALIGN32 PathFirst
 	{
 		PathData paths[250];
+		PathData *epaths[160];
 		uint16_t from,
 			maxcost = 0;
-		uint8_t cnt = 0,
+		uint8_t ecnt,
+			cnt = 0,
 			endcnt = 0,
 			hasEnd = 0;
 	}paths1[52];
@@ -118,11 +120,12 @@ public:
 	PathFirst * curPit;
 	uint8_t maxlevel, maxwide, toEPcnt;
 
-	uint16_t fastDFSv768(PathData *p, const PathData *pend, SimArg arg);//VectorTest of 768bit
-	uint16_t fastDFSv512(PathData *p, const PathData *pend, SimArg arg);//VectorTest of 512bit
-	uint16_t fastDFSv256(PathData *p, const PathData *pend, SimArg arg);//VectorTest of 512bit
-	uint16_t fastDFSb512(PathData *p, const PathData *pend, SimArg arg);//BitTest of 512bit
-	uint16_t fastDFSEND(PathData *p, const PathData *pend, SimArg arg);
+	uint16_t fastDFSv768(PathData * __restrict p, const PathData * __restrict pend, SimArg arg);//VectorTest of 768bit
+	uint16_t fastDFSv512(PathData * __restrict p, const PathData * __restrict pend, SimArg arg);//VectorTest of 512bit
+	uint16_t fastDFSv512e(PathData * __restrict pcur[], PathData * __restrict pend[], SimArg arg);//VectorTest of 512bit
+	uint16_t fastDFSv256(PathData * __restrict p, const PathData * __restrict pend, SimArg arg);//VectorTest of 512bit
+	uint16_t fastDFSb512(PathData * __restrict p, const PathData * __restrict pend, SimArg arg);//BitTest of 512bit
+	uint16_t fastDFSEND(PathData * __restrict p, const PathData * __restrict pend, SimArg arg);
 
 	void FormRes();
 public:
