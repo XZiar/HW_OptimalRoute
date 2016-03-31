@@ -392,7 +392,7 @@ uint16_t Searcher::fastDFSv512(PathData * __restrict p, const PathData * __restr
 			pf.ecnt = ecnt;
 		}
 		PathFirst *cpf = path1[p->from];
-		//printf("cut finish at %lld, cut %d\n", Util::GetElapse(), eccnt);
+		//printf("cut finish at %lld\n", Util::GetElapse());
 		return fastDFSv512e(&cpf->epaths[0], &cpf->epaths[cpf->ecnt], arg);//refresh lastCost
 	}
 
@@ -586,7 +586,7 @@ void Searcher::StepEnd(const uint16_t maxid)
 	}
 	else if (maxid > 256)//>256
 	{
-		demand.limcut = demand.count - 12;
+		demand.limcut = demand.count - 11;
 	#ifdef FIN
 		arg.RemainCost = 500;
 	#endif
