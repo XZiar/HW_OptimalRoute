@@ -210,3 +210,27 @@ FakesAssemblies/
 GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
+/CodeCraft/test-case
+/CodeCraft/My Advisor XE Results - CodeCraft
+/CodeCraft/hd
+/CodeCraft/casez
+/CodeCraft/casey
+/CodeCraft/casex
+/CodeCraft/casep
+/CodeCraft/case4
+/CodeCraft/case3
+/CodeCraft/case2
+/CodeCraft/case1
+/CodeCraft/case0
+/ProblemPeek
+/PathChecker
+/pack
+/IC++CodeCraft
+*.sln
+*.db
+*.opendb
+/pathchecker.cpp
+/检测答案的小代码.zip
+/readme.txt
+*.vcxproj
+*.filters

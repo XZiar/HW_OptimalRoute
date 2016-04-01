@@ -24,8 +24,10 @@ struct DemandData
 	uint16_t idFrom,
 		idTo,
 		count,
-		idNeed[61];
+		idNeed[52];
+	uint8_t map[600];
 };
+int poo = sizeof(DemandData);
 struct ResData
 {
 	uint16_t idLink[638],
