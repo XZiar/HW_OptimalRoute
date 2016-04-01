@@ -269,9 +269,9 @@ void Searcher::fastDFS(PointData::Out *po, const PointData::Out *poend)
 			curPath.isEnd = (thisID == pmain.to ? 0x7f : 0x0);
 
 			curPit->paths[curPit->cnt++] = curPath;//add path
-			if (curPit->cnt > 249)//has space
+			if (curPit->cnt > (pPERpf - 1))//has space
 			{//full,but cost lower
-				sort(curPit->paths, curPit->paths + 250);//sort to find out the longest
+				sort(curPit->paths, curPit->paths + pPERpf);//sort to find out the longest
 				curPit->maxcost = curPit->paths[maxwide - 1].cost;//refresh max-cost
 				curPit->cnt = maxwide;
 			}
