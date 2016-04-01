@@ -27,7 +27,7 @@ struct DemandData
 		idNeed[52];
 	uint8_t map[600];
 };
-int poo = sizeof(DemandData);
+//int poo = sizeof(DemandData);
 struct ResData
 {
 	uint16_t idLink[638],

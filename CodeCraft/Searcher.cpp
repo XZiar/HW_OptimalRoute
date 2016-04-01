@@ -203,7 +203,7 @@ PathData & PathData::operator=(const PathData & from)
 void PathData::Clean()
 {
 	pmap.Clean();
-	cost = cnt = isEnd = ecut = 0;
+	cost = cnt = isEnd = toidx = 0;
 }
 
 void PathData::Merge(const PathData & left, const PathData & right)
@@ -234,6 +234,9 @@ static inline bool POutJudge(PointData::Out &o1, PointData::Out &o2)
 }
 void Searcher::Init()
 {
+	uint64_t obj = 0x1;
+	for (int a = 0; a < 56; obj<<=1)
+		DMDmask[a++] = obj;
 	pmain.from = demand.idFrom, pmain.to = demand.idTo;
 	demand.idNeed[demand.count] = demand.idFrom;
 	pmain.pmap.Set(demand.idTo, true);
@@ -262,6 +265,7 @@ void Searcher::fastDFS(PointData::Out *po, const PointData::Out *poend)
 			curPath.mid[curPath.cnt++] = po->rid;//add go though
 			curPath.pmap.Set(thisID, true);//set bitmap
 			curPath.to = thisID;//add destination
+			curPath.toidx = demand.map[thisID];
 			curPath.isEnd = (thisID == pmain.to ? 0x7f : 0x0);
 
 			curPit->paths[curPit->cnt++] = curPath;//add path

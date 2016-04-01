@@ -68,12 +68,15 @@ int16_t Util::ReadFile(const char* fname, DemandData &dmd)
 	//fscanf(fp, "%hd,%hd,", &dmd.idTo, &dmd.idFrom);
 	fscanf(fp, "%hd,%hd,", &dmd.idFrom, &dmd.idTo);
 	fscanf(fp, "%s", str);
-	for (int a = 0; a < strlen(str);a++)
+	for (int a = 0; a < strlen(str); a++)
 	{
 		if (str[a] != '|')
 			dmd.idNeed[cnt] = dmd.idNeed[cnt] * 10 + str[a] - '0';
 		else
+		{
+			dmd.map[dmd.idNeed[cnt]] = cnt;
 			cnt++;
+		}
 	}
 	dmd.count = ++cnt;
 	fclose(fp);

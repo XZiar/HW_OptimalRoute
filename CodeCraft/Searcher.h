@@ -63,7 +63,7 @@ struct _MM_ALIGN32 PathData
 		{
 			uint16_t from, to, cost,
 				mid[27];
-			uint8_t cnt, isEnd, ecut;
+			uint8_t cnt, isEnd, toidx;
 		};
 		__m256i datAVX[2];
 	};
@@ -83,6 +83,7 @@ struct _MM_ALIGN32 PathData
 class Searcher
 {
 private:
+	uint64_t DMDmask[56];
 	struct SimArg
 	{
 		uint16_t RemainCost;
@@ -148,7 +149,7 @@ private:
 				pf.ecnt = ecnt;
 			}
 			PathFirst *cpf = path1[p->from];//printf("cut finish at %lld\n", Util::GetElapse());
-			return fastDFSe<T>(&cpf->epaths[0], &cpf->epaths[cpf->ecnt], arg);//refresh lastCost
+			return fastDFSe<T>(&cpf->epaths[0], &cpf->epaths[cpf->ecnt], 0, arg);//refresh lastCost
 		}
 		const uint8_t nextlevel = arg.curlevel + 1;
 		for (; p < pend; p++)
@@ -174,9 +175,8 @@ private:
 		}
 		return arg.RemainCost;//refresh lastCost
 	}
-	template <typename T> uint16_t fastDFSe(PathData * __restrict pcur[], PathData * __restrict pend[], SimArg arg)//Ecut-VectorTest
+	template <typename T> uint16_t fastDFSe(PathData * __restrict pcur[], PathData * __restrict pend[], const uint64_t dmdMap, SimArg arg)//Ecut-VectorTest
 	{
-		static T dmdPMAP;
 		const T curPMAP(TMPpmap);
 		const uint8_t nextlevel = arg.curlevel + 1;
 		for (; pcur < pend; pcur++)
@@ -187,8 +187,8 @@ private:
 		#ifndef FIN
 			VTestCnt++;
 		#endif
-			if (dmdPMAP.Test(p->to))//already go through
-				continue;
+			if (dmdMap & DMDmask[p->toidx])//already go through
+			continue;
 			if (!curPMAP.Test(p->pmap))//has overlap points
 				continue;
 			//reach next point
@@ -203,11 +203,7 @@ private:
 			if (nextlevel != demand.count)
 			{
 				if (npf.ecnt != 0 && narg.epcnt != 0)
-				{
-					dmdPMAP.Set(p->to, true);
-					arg.RemainCost = p->cost + fastDFSe<T>(&npf.epaths[0], &npf.epaths[npf.ecnt], narg);
-					dmdPMAP.Set(p->to, false);
-				}
+					arg.RemainCost = p->cost + fastDFSe<T>(&npf.epaths[0], &npf.epaths[npf.ecnt], dmdMap | DMDmask[p->toidx], narg);
 			}
 			else
 				arg.RemainCost = p->cost + fastDFSEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
