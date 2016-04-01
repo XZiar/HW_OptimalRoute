@@ -95,7 +95,7 @@ public:
 	struct _MM_ALIGN32 PathFirst
 	{
 		PathData paths[pPERpf];
-		//PathData *epaths[160];
+		PathData *epaths[160];
 		uint16_t from,
 			ecnt,
 			cnt = 0,
@@ -140,18 +140,21 @@ private:
 			for (uint8_t a = 0; a < demand.count; a++)
 			{
 				PathFirst &pf = paths1[a];
-				uint16_t ecnt = pf.cnt;
+				//uint16_t ecnt = pf.cnt;
+				uint16_t ecnt = 0;
 				if (!curPMAP.Test(pf.from) || pf.from == p->from)
 					for (uint8_t b = pf.endcnt; b < pf.cnt; b++)
 					{
 						PathData &op = pf.paths[b];
 						if (curPMAP.Test(op.pmap))
-							pf.paths[ecnt++] = op;
+							//pf.paths[ecnt++] = op;
+							pf.epaths[ecnt++] = &op;
 					}
 				pf.ecnt = ecnt;
 			}
 			PathFirst *cpf = path1[p->from];//printf("cut finish at %lld\n", Util::GetElapse());
-			return fastDFSe<T>(&cpf->paths[cpf->cnt], &cpf->paths[cpf->ecnt], 0, arg);//refresh lastCost
+			//return fastDFSe<T>(&cpf->paths[cpf->cnt], &cpf->paths[cpf->ecnt], 0, arg);//refresh lastCost
+			return fastDFSe<T>(&cpf->epaths[0], &cpf->epaths[cpf->ecnt], 0, arg);//refresh lastCost
 		}
 		const uint8_t nextlevel = arg.curlevel + 1;
 		for (; p < pend; p++)
@@ -177,12 +180,14 @@ private:
 		}
 		return arg.RemainCost;//refresh lastCost
 	}
-	template <typename T> uint16_t fastDFSe(PathData * __restrict p, const PathData * __restrict pend, const uint64_t dmdMap, SimArg arg)//Ecut-VectorTest
+	//template <typename T> uint16_t fastDFSe(PathData * __restrict p, const PathData * __restrict pend, const uint64_t dmdMap, SimArg arg)//Ecut-VectorTest
+	template <typename T> uint16_t fastDFSe(PathData * __restrict pcur[], PathData * __restrict pend[], const uint64_t dmdMap, SimArg arg)//Ecut-VectorTest
 	{
 		const T curPMAP(TMPpmap);
 		const uint8_t nextlevel = arg.curlevel + 1;
-		for (; p < pend; p++)
+		for (; pcur < pend; pcur++)
 		{
+			const PathData * __restrict p = *pcur;
 			if (arg.RemainCost <= p->cost)//cost too much
 				break;//according to order, later ones cost more
 		#ifndef FIN
@@ -203,8 +208,10 @@ private:
 		#endif
 			if (nextlevel != demand.count)
 			{
-				if (npf.ecnt != npf.cnt && narg.epcnt != 0)
-					arg.RemainCost = p->cost + fastDFSe<T>(&npf.paths[npf.cnt], &npf.paths[npf.ecnt], dmdMap | DMDmask[p->toidx], narg);
+				//if (npf.ecnt != npf.cnt && narg.epcnt != 0)
+					//arg.RemainCost = p->cost + fastDFSe<T>(&npf.paths[npf.cnt], &npf.paths[npf.ecnt], dmdMap | DMDmask[p->toidx], narg);
+				if (npf.ecnt != 0 && narg.epcnt != 0)
+					arg.RemainCost = p->cost + fastDFSe<T>(&npf.epaths[0], &npf.epaths[npf.ecnt], dmdMap | DMDmask[p->toidx], narg);
 			}
 			else
 				arg.RemainCost = p->cost + fastDFSEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
