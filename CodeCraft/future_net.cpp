@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
 	searcher.Init();
 
-	uint16_t width, depth = 16;
+	uint16_t width, depth = 11;
 	{
 		uint16_t w1, w2;
 		w1 = uint16_t(sqrt(linknum * dmdnum * 1.0) / 2.4);

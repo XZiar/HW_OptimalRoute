@@ -13,8 +13,8 @@ struct PointData
 	{
 		uint16_t dest;
 		uint16_t rid;
-		uint16_t dis;
-	} out[128];
+		uint8_t dis;
+	} out[8];
 	uint16_t id;
 	uint8_t cnt = 0;
 };

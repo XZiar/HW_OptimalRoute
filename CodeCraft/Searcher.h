@@ -61,11 +61,11 @@ struct _MM_ALIGN32 PathData
 	{
 		struct
 		{
-			uint16_t from, to, cost,
-				mid[27];
-			uint8_t cnt, isEnd, toidx;
+			uint16_t from, to,
+				mid[12];
+			uint8_t cnt, cost, isEnd, toidx;
 		};
-		__m256i datAVX[2];
+		__m256i datAVX;
 	};
 
 	PathData();
@@ -78,6 +78,7 @@ struct _MM_ALIGN32 PathData
 		return cost == pd.cost ? cnt < pd.cnt : cost < pd.cost;
 	}
 };
+//auto spd = sizeof(PMap);
 //auto spd = sizeof(PathData);
 
 class Searcher
@@ -91,20 +92,30 @@ private:
 	};
 	//int tkp = sizeof(SimArg);
 public:
-	static const uint16_t pPERpf = 300;
+	static const uint16_t pPERpf = 320;
 	struct _MM_ALIGN32 PathFirst
 	{
-		PathData paths[pPERpf];
+		PathData paths[162];
 		PathData *epaths[160];
 		uint16_t from,
 			cnt = 0,
-			maxcost = 0,
 			ecutCnt;
 		uint8_t 
 			endcnt = 0,
 			hasEnd = 0;
 	}paths1[52];
-	//int kkk = sizeof(PathFirst);
+	int kkk = sizeof(PathFirst);
+	struct _MM_ALIGN32 PathFirstTmp
+	{
+		PathData paths[pPERpf];
+		uint16_t from,
+			cnt = 0,
+			maxcost = 0;
+		uint8_t
+			endcnt = 0,
+			hasEnd = 0;
+	}curPit;
+	
 	
 	void fastDFS(PointData::Out *po, const PointData::Out *poend);
 
@@ -114,7 +125,7 @@ public:
 	PathData pmain;
 	PathData curPath;
 	PMap TMPpmap;
-	PathFirst * curPit;
+	//PathFirst * curPit;
 	uint8_t maxlevel, maxwide, toEPcnt, cutLim_min;
 
 	uint16_t fastDFSv256(PathData * __restrict p, const PathData * __restrict pend, SimArg arg);//VectorTest of 256bit

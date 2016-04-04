@@ -192,8 +192,8 @@ PathData & PathData::operator=(const PathData & from)
 {
 	pmap = from.pmap;
 #ifdef AVX
-	_mm256_stream_si256(&datAVX[0], _mm256_load_si256(&from.datAVX[0]));
-	_mm256_stream_si256(&datAVX[1], _mm256_load_si256(&from.datAVX[1]));
+	_mm256_stream_si256(&datAVX, _mm256_load_si256(&from.datAVX));
+	//_mm256_stream_si256(&datAVX[1], _mm256_load_si256(&from.datAVX[1]));
 #else
 	memcpy(datB, ori.datB, sizeof(datB));
 #endif	
@@ -254,7 +254,7 @@ void Searcher::fastDFS(PointData::Out *po, const PointData::Out *poend)
 {
 	for (; po < poend; po++)
 	{
-		if (curPit->maxcost - curPath.cost < po->dis)//this is too long
+		if (curPit.maxcost - curPath.cost < po->dis)//this is too long
 			continue;//according to order, later ones are much longer
 		uint16_t thisID = po->dest;
 		if (curPath.pmap.Test(thisID))//already go through
@@ -268,12 +268,12 @@ void Searcher::fastDFS(PointData::Out *po, const PointData::Out *poend)
 			curPath.toidx = demand.map[thisID];
 			curPath.isEnd = (thisID == pmain.to ? 0x7f : 0x0);
 
-			curPit->paths[curPit->cnt++] = curPath;//add path
-			if (curPit->cnt > (pPERpf - 1))//has space
+			curPit.paths[curPit.cnt++] = curPath;//add path
+			if (curPit.cnt > (pPERpf - 1))//has space
 			{//full,but cost lower
-				sort(curPit->paths, curPit->paths + pPERpf);//sort to find out the longest
-				curPit->maxcost = curPit->paths[maxwide - 1].cost;//refresh max-cost
-				curPit->cnt = maxwide;
+				sort(curPit.paths, curPit.paths + pPERpf);//sort to find out the longest
+				curPit.maxcost = curPit.paths[maxwide - 1].cost;//refresh max-cost
+				curPit.cnt = maxwide;
 			}
 
 			curPath.pmap.Set(thisID, false);//clear bitmap
@@ -314,28 +314,29 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 	for (int a = 0; a <= demand.count; a++)
 	{
 		curPath.Clean();
-		curPit = path1[demand.idNeed[a]] = &paths1[a];
-		curPit->maxcost = 100, curPit->cnt = 0;
-		curPit->from = curPath.from = demand.idNeed[a];
+		PathFirst *pf = path1[demand.idNeed[a]] = &paths1[a];
+		curPit.maxcost = 100, curPit.cnt = 0;
+		pf->from = curPit.from = curPath.from = demand.idNeed[a];
 
 		PointData &np = points[curPath.from];
 		fastDFS(&np.out[0], &np.out[np.cnt]);
 		
-		sort(curPit->paths, curPit->paths + curPit->cnt, Separator);
-		curPit->cnt = min(curPit->cnt, maxwide);
+		sort(curPit.paths, curPit.paths + curPit.cnt, Separator);
+		pf->cnt = min(curPit.cnt, maxwide);
+		memcpy(pf->paths, curPit.paths, sizeof(PathData)*pf->cnt);
 
 		int b = 0;
-		while (b < curPit->cnt && curPit->paths[b].isEnd)
+		while (b < pf->cnt && pf->paths[b].isEnd)
 			b++;
-		curPit->endcnt = b;
+		pf->endcnt = b;
 		if (b > 0 && a != demand.count)
 		{
-			curPit->hasEnd = 0x1;
+			pf->hasEnd = 0x1;
 			++toEPcnt;
 		}
 		else
-			curPit->hasEnd = 0x0;
-		//printf("%dth,%d,sort:%d\n", a, curPath.from, anscnt);
+			pf->hasEnd = 0x0;
+		//printf("%dth,%d,sort:\n", a, pf->cnt);
 	}
 }
 
