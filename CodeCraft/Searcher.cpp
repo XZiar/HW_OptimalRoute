@@ -417,7 +417,7 @@ void Searcher::StepEnd(const uint16_t maxid)
 
 	if (maxid > 510)//>512
 	{
-		limcut = demand.count - 11;
+		cutLim_min = demand.count - 11;
 	#ifdef FIN
 		arg.RemainCost = 640;
 	#endif
@@ -425,7 +425,7 @@ void Searcher::StepEnd(const uint16_t maxid)
 	}
 	else if (maxid > 256)//>256
 	{
-		limcut = demand.count - 11;
+		cutLim_min = demand.count - 11;
 	#ifdef FIN
 		arg.RemainCost = 500;
 	#endif
