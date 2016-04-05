@@ -2,8 +2,7 @@
 
 struct TOPOData
 {
-	uint16_t idLink, 
-		idSrc, 
+	uint16_t idSrc, 
 		idDest, 
 		cost;
 };
@@ -39,8 +38,8 @@ class Util
 {
 	static char outfname[256];
 	static uint64_t t_begin;
-	//static TOPOData topo[4800];
 public:
+	static TOPOData topo[4800];
 	static void Init(const char * fname);
 
 	static uint64_t GetElapse();

@@ -6,7 +6,7 @@ using namespace std::chrono;
 
 char Util::outfname[256];
 uint64_t Util::t_begin;
-//TOPOData Util::topo[4800];
+TOPOData Util::topo[4800];
 void Util::Init(const char * fname)
 {
 	t_begin = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
@@ -31,7 +31,7 @@ int16_t Util::ReadFile(const char* fname, PointData * points, uint16_t &maxid)
 	//for (; fscanf(fp, "%hd,%hd,%hd,%hd", &idLink, &idDest, &idSrc, &cost) != EOF; )
 	for (; fscanf(fp, "%hd,%hd,%hd,%hd", &idLink, &idSrc, &idDest, &cost) != EOF; )
 	{
-		//topo[cnt].idLink = idLink, topo[cnt].idSrc = idSrc, topo[cnt].idDest = idDest, topo[cnt].cost = cost;
+		//topo[idLink].idSrc = idSrc, topo[idLink].idDest = idDest, topo[idLink].cost = cost;
 		PointData &p = points[idSrc];
 		p.id = idSrc;
 		for (int a = 0; a < p.cnt; a++)

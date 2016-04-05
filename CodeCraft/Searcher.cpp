@@ -266,14 +266,16 @@ void Searcher::fastDFS(PointData::Out * __restrict po, const PointData::Out * __
 			continue;
 		if (pmain.pmap.Test(thisID))//reach need-point
 		{
-			if (dmdMap & DMDmask[thisID])//become superset
+			uint8_t idx = demand.map[thisID];
+			if (dmdMap & DMDmask[idx])//become superset
 				continue;
-			dmdMap |= DMDmask[thisID];//add blocker
+			dmdMap |= DMDmask[idx];//add blocker
+
 			curPath.cost += po->dis;//add cost
 			curPath.mid[curPath.cnt++] = po->rid;//add go though
 			curPath.pmap.Set(thisID, true);//set bitmap
 			curPath.to = thisID;//add destination
-			curPath.toidx = demand.map[thisID];
+			curPath.toidx = idx;
 			curPath.isEnd = (thisID == pmain.to ? 0x7f : 0x0);
 
 			curPit.paths[curPit.cnt++] = curPath;//add path

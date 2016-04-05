@@ -128,7 +128,10 @@ int main(int argc, char *argv[])
 				PathData &p = pf.paths[b];
 				fprintf(fp, "\t%3d(%3d):", p.to, p.cost);
 				for (int c = 0; c < p.cnt; c++)
-					fprintf(fp, " %4d", p.mid[c]);
+				{
+					uint16_t rid = p.mid[c];
+					fprintf(fp, " %4d", Util::topo[rid].idDest);
+				}
 				fprintf(fp, "\n");
 			}
 		}
