@@ -75,7 +75,8 @@ struct _MM_ALIGN32 PathData
 
 	bool operator<(const PathData &pd) const
 	{
-		return cost == pd.cost ? cnt < pd.cnt : cost < pd.cost;
+		//return cost == pd.cost ? cnt < pd.cnt : cost < pd.cost;
+		return cnt == pd.cnt ? cost < pd.cost : cnt < pd.cnt;
 	}
 };
 //auto spd = sizeof(PMap);
@@ -117,7 +118,7 @@ public:
 	}curPit;
 	
 	
-	void fastDFS(PointData::Out *po, const PointData::Out *poend);
+	void fastDFS(PointData::Out * __restrict po, const PointData::Out * __restrict poend, uint64_t dmdMap);
 
 	PathData *pstack[60];
 
@@ -202,7 +203,7 @@ private:
 			VTestCnt++;
 		#endif
 			if (dmdMap & DMDmask[p->toidx])//already go through
-			continue;
+				continue;
 			if (!curPMAP.Test(p->pmap))//has overlap points
 				continue;
 			//reach next point

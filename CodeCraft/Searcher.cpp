@@ -246,11 +246,16 @@ void Searcher::Init()
 	for (PointData &p : points)
 	{
 		if (p.cnt > 1)
-			sort(p.out, p.out + p.cnt, POutJudge);
+			//sort(p.out, p.out + p.cnt, POutJudge);
+			sort(p.out, p.out + p.cnt, [&](PointData::Out &o1, PointData::Out &o2) 
+		{
+			bool a = pmain.pmap.Test(o1.dest), b = pmain.pmap.Test(o2.dest);
+			return a == b ? o1.dis < o2.dis : a;
+		});
 	}
 }
 
-void Searcher::fastDFS(PointData::Out *po, const PointData::Out *poend)
+void Searcher::fastDFS(PointData::Out * __restrict po, const PointData::Out * __restrict poend, uint64_t dmdMap)
 {
 	for (; po < poend; po++)
 	{
@@ -261,6 +266,9 @@ void Searcher::fastDFS(PointData::Out *po, const PointData::Out *poend)
 			continue;
 		if (pmain.pmap.Test(thisID))//reach need-point
 		{
+			if (dmdMap & DMDmask[thisID])//become superset
+				continue;
+			dmdMap |= DMDmask[thisID];//add blocker
 			curPath.cost += po->dis;//add cost
 			curPath.mid[curPath.cnt++] = po->rid;//add go though
 			curPath.pmap.Set(thisID, true);//set bitmap
@@ -289,7 +297,7 @@ void Searcher::fastDFS(PointData::Out *po, const PointData::Out *poend)
 			curPath.pmap.Set(thisID, true);//set bitmap
 			
 			PointData &np = points[thisID];
-			fastDFS(&np.out[0], &np.out[np.cnt]);//into next point
+			fastDFS(&np.out[0], &np.out[np.cnt], dmdMap);//into next point
 
 			curPath.pmap.Set(thisID, false);//clear bitmap
 			curPath.cnt--;//rollback go though
@@ -303,8 +311,8 @@ void Searcher::fastDFS(PointData::Out *po, const PointData::Out *poend)
 
 static inline bool Separator(const PathData &pa, const PathData &pb)
 {
-	return pa.isEnd == pb.isEnd ? (pa.cost == pb.cost ? pa.cnt < pb.cnt : pa.cost < pb.cost) : (pa.isEnd > pb.isEnd);
-	//return pa.isEnd == pb.isEnd ? (pa.cnt == pb.cnt ? pa.cost < pb.cost : pa.cnt < pb.cnt) : (pa.isEnd > pb.isEnd);
+	//return pa.isEnd == pb.isEnd ? (pa.cost == pb.cost ? pa.cnt < pb.cnt : pa.cost < pb.cost) : (pa.isEnd > pb.isEnd);
+	return pa.isEnd == pb.isEnd ? (pa.cnt == pb.cnt ? pa.cost < pb.cost : pa.cnt < pb.cnt) : (pa.isEnd > pb.isEnd);
 }
 void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 {
@@ -319,7 +327,7 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 		pf->from = curPit.from = curPath.from = demand.idNeed[a];
 
 		PointData &np = points[curPath.from];
-		fastDFS(&np.out[0], &np.out[np.cnt]);
+		fastDFS(&np.out[0], &np.out[np.cnt], 0);
 		
 		sort(curPit.paths, curPit.paths + curPit.cnt, Separator);
 		pf->cnt = min(curPit.cnt, maxwide);
