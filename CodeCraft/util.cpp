@@ -31,7 +31,7 @@ int16_t Util::ReadFile(const char* fname, PointData * points, uint16_t &maxid)
 	//for (; fscanf(fp, "%hd,%hd,%hd,%hd", &idLink, &idDest, &idSrc, &cost) != EOF; )
 	for (; fscanf(fp, "%hd,%hd,%hd,%hd", &idLink, &idSrc, &idDest, &cost) != EOF; )
 	{
-		//topo[idLink].idSrc = idSrc, topo[idLink].idDest = idDest, topo[idLink].cost = cost;
+		topo[idLink].idSrc = idSrc, topo[idLink].idDest = idDest, topo[idLink].cost = cost;
 		PointData &p = points[idSrc];
 		p.id = idSrc;
 		for (int a = 0; a < p.cnt; a++)
@@ -68,17 +68,21 @@ int16_t Util::ReadFile(const char* fname, DemandData &dmd)
 	//fscanf(fp, "%hd,%hd,", &dmd.idTo, &dmd.idFrom);
 	fscanf(fp, "%hd,%hd,", &dmd.idFrom, &dmd.idTo);
 	fscanf(fp, "%s", str);
+	uint16_t pid = 0;
 	for (int a = 0; a < strlen(str); a++)
 	{
 		if (str[a] != '|')
-			dmd.idNeed[cnt] = dmd.idNeed[cnt] * 10 + str[a] - '0';
+			pid = pid * 10 + str[a] - '0';
 		else
 		{
-			dmd.map[dmd.idNeed[cnt]] = cnt;
-			cnt++;
+			dmd.map[pid] = cnt;
+			dmd.idNeed[cnt++] = pid;
+			pid = 0;
 		}
 	}
-	dmd.count = ++cnt;
+	dmd.map[pid] = cnt;
+	dmd.idNeed[cnt] = pid;
+	dmd.map[dmd.idTo] = dmd.count = ++cnt;
 	fclose(fp);
 	return cnt;
 }
