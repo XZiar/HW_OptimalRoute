@@ -90,6 +90,7 @@ private:
 	{
 		uint16_t RemainCost;
 		uint8_t curlevel, epcnt;
+		uint16_t estCosts;
 	};
 	//int tkp = sizeof(SimArg);
 public:
@@ -100,7 +101,8 @@ public:
 		PathData *epaths[160];
 		uint16_t from,
 			cnt = 0,
-			ecutCnt;
+			ecutCnt,
+			estCost;
 		uint8_t 
 			endcnt = 0,
 			hasEnd = 0;
@@ -121,6 +123,7 @@ public:
 	void fastDFS(PointData::Out * __restrict po, const PointData::Out * __restrict poend, uint64_t dmdMap);
 
 	PathData *pstack[60];
+	uint8_t psidxs[60];
 
 	PathFirst *path1[600];
 	PathData pmain;
@@ -136,7 +139,8 @@ public:
 public:
 	PointData points[600];
 	DemandData demand;
-	uint64_t loopLVcnt[60], EPconflic = 0, VTestCnt = 0, loopcount = 0;
+	uint64_t loopLVcnt[59], estCut = 0, actCut = 0, VTestCnt = 0, loopcount = 0;
+	uint16_t costs[4] = { 0,0,0,0 };
 	Searcher();
 	~Searcher();
 
@@ -179,8 +183,9 @@ private:
 			//reach next point
 			PathFirst &npf = *path1[p->to];
 			pstack[arg.curlevel] = p;//add go though
+			psidxs[arg.curlevel] = p->mid[11];
 			TMPpmap.Merge(curPMAP, p->pmap);
-			const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
+			const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd), uint16_t(arg.estCosts - p->mid[11]) };
 		#ifndef FIN
 			loopLVcnt[nextlevel]++;
 			loopcount++;
@@ -198,7 +203,19 @@ private:
 		{
 			const PathData * __restrict p = *pcur;
 			if (arg.RemainCost <= p->cost)//cost too much
+			{
+			#ifndef FIN
+				actCut++;
+			#endif
 				break;//according to order, later ones cost more
+			}
+			if (arg.estCosts > arg.RemainCost)
+			{
+			#ifndef FIN
+				estCut++;
+			#endif
+				break;
+			}
 		#ifndef FIN
 			VTestCnt++;
 		#endif
@@ -209,8 +226,9 @@ private:
 			//reach next point
 			PathFirst &npf = *path1[p->to];
 			pstack[arg.curlevel] = (PathData *)p;//add go though
+			psidxs[arg.curlevel] = p->mid[11];
 			TMPpmap.Merge(curPMAP, p->pmap);
-			const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
+			const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd), uint16_t(arg.estCosts - p->mid[11]) };
 		#ifndef FIN
 			loopLVcnt[nextlevel]++;
 			loopcount++;

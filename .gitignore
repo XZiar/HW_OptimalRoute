@@ -235,3 +235,4 @@ ModelManifest.xml
 *.vcxproj
 *.filters
 /CodeCraft/Searcher - 副本.h
+/BruteDFS

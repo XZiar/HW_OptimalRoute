@@ -321,6 +321,7 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 	maxlevel = maxdepth;
 	maxwide = maxwidth;
 	toEPcnt = 0;
+	
 	for (int a = 0; a <= demand.count; a++)
 	{
 		curPath.Clean();
@@ -339,15 +340,28 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 		while (b < pf->cnt && pf->paths[b].isEnd)
 			b++;
 		pf->endcnt = b;
+		costs[0] += pf->paths[b].cost;
+		costs[1] += pf->paths[b+1].cost;
 		if (b > 0 && a != demand.count)
 		{
 			pf->hasEnd = 0x1;
 			++toEPcnt;
+			costs[2] += pf->paths[0].cost;
+			pf->estCost = (pf->paths[b].cost + pf->paths[b + 1].cost + pf->paths[0].cost) / 3;
 		}
 		else
+		{
 			pf->hasEnd = 0x0;
-		//printf("%dth,%d,sort:\n", a, pf->cnt);
+			pf->estCost = (pf->paths[0].cost + pf->paths[1].cost) / 2;
+		}
+		costs[3] += pf->estCost;
+		for (uint8_t c = 0; c < pf->cnt; c++)
+		{
+			pf->paths[c].mid[11] = pf->estCost;
+		}
 	}
+	//printf("Total:p0:%3d,p1:%3d,pEnd:%3d\n", costs[0], costs[1], costs[2]);
+	printf("Total Estimate:%3d\n", costs[3]);
 }
 
 uint16_t Searcher::fastDFSv256(PathData * __restrict p, const PathData * __restrict pend, SimArg arg)
@@ -396,6 +410,7 @@ uint16_t Searcher::fastDFSEND(PathData * __restrict p, const PathData * __restri
 
 		//final step,find a shorter route
 		pstack[arg.curlevel] = p;
+		psidxs[arg.curlevel] = p->mid[11];
 		FormRes();
 		
 		return p->cost;//according to order, later ones cost more
@@ -416,7 +431,9 @@ void Searcher::FormRes()
 		{
 			res.idLink[res.count++] = p.mid[b];
 		}
+		//printf("%3d(%3d)-", p.from, p.mid[11]);
 	}
+	//printf("\n");
 	Util::WriteFile(&res);
 }
 
@@ -424,11 +441,12 @@ void Searcher::StepEnd(const uint16_t maxid)
 {
 	TMPpmap.Clean();
 	PathFirst *pf = path1[pmain.from];
-	SimArg arg{ 1000, 0, toEPcnt };
+	SimArg arg{ 1000, 0, toEPcnt, costs[3] };
 
 	if (maxid > 510)//>512
 	{
 		cutLim_min = demand.count - 11;
+		printf("***try lim:%d\n", cutLim_min);
 	#ifdef FIN
 		arg.RemainCost = 640;
 	#endif
@@ -436,7 +454,9 @@ void Searcher::StepEnd(const uint16_t maxid)
 	}
 	else if (maxid > 256)//>256
 	{
-		cutLim_min = demand.count - 11;
+		cutLim_min = demand.count - 13 + maxwide / 60;
+		//cutLim_min = demand.count - 11;
+		printf("***try lim:%d\n", cutLim_min);
 	#ifdef FIN
 		arg.RemainCost = 500;
 	#endif

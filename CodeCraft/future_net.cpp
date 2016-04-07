@@ -37,6 +37,24 @@ int main(int argc, char *argv[])
 				}
 			}).detach();
 		}
+		else if (strcmp(argv[a], "timer2") == 0)
+		{
+			thread([&]()
+			{
+				uint64_t lastLP = 0, lastVT = 0;
+				while (true)
+				{
+					this_thread::sleep_for(chrono::milliseconds(1000));
+					uint64_t cur = searcher.actCut;
+					uint64_t curt = Util::GetElapse();
+					printf("actCut %5lldK at %4llds,avg:%5lldK/s\n", (cur - lastLP) / 1000, curt / 1000, cur / curt);
+					lastLP = cur;
+					cur = searcher.estCut;
+					printf("estCut %5lldK at %4llds,avg:%5lldK/s\n", (cur - lastVT) / 1000, curt / 1000, cur / curt);
+					lastVT = cur;
+				}
+			}).detach();
+		}
 		else if (strcmp(argv[a] + 2, "lvcnt") == 0)
 		{
 			uint8_t lv = (argv[a][0] - '0') * 10 + (argv[a][1] - '0');
@@ -102,9 +120,9 @@ int main(int argc, char *argv[])
 
 	uint16_t width, depth = 11;
 	{
-		uint16_t w1, w2;
+		uint16_t w1, w2, w3;
 		w1 = uint16_t(sqrt(linknum * dmdnum * 1.0) / 2.4);
-		w2 = uint16_t(linknum / 20);
+		w2 = uint16_t(dmdnum * 4.8);
 		width = max(w1, w2);
 		width = min(width, 160);
 	}
