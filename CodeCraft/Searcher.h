@@ -86,13 +86,14 @@ class Searcher
 {
 private:
 	uint64_t DMDmask[56];
+	uint16_t * EstCostPos[56];
 	struct SimArg
 	{
-		uint16_t estCosts, curEstCost;
-		uint16_t RemainCost;
+		uint16_t estCosts, empty, RemainCost;
 		uint8_t curlevel, epcnt;
 	};
-	//int tkp = sizeof(SimArg);
+	int tkp = sizeof(SimArg);
+	void ReValueEstCut(uint16_t objCost);
 public:
 	static const uint16_t pPERpf = 320;
 	struct _MM_ALIGN32 PathFirst
@@ -185,8 +186,7 @@ private:
 			pstack[arg.curlevel] = p;//add go though
 			psidxs[arg.curlevel] = p->mid[11];
 			TMPpmap.Merge(curPMAP, p->pmap);
-			const SimArg narg{ uint16_t(arg.estCosts - arg.curEstCost), npf.estCost, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
-			//const SimArg narg{ uint16_t(arg.estCosts - p->mid[11]), npf.estCost, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
+			const SimArg narg{ uint16_t(arg.estCosts - npf.estCost), -1, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 		#ifndef FIN
 			loopLVcnt[nextlevel]++;
 			loopcount++;
@@ -210,15 +210,6 @@ private:
 			#endif
 				break;//according to order, later ones cost more
 			}
-			/*const uint16_t nextEstCost = arg.estCosts - p->mid[11];
-			if (nextEstCost > arg.RemainCost)
-			{
-			#ifndef FIN
-				//loopLVcnt[nextlevel]++;
-				estCut++;
-			#endif
-				break;
-			}*/
 		#ifndef FIN
 			VTestCnt++;
 		#endif
@@ -229,10 +220,9 @@ private:
 			//reach next point
 			PathFirst &npf = *path1[p->to];
 			pstack[arg.curlevel] = (PathData *)p;//add go though
-			psidxs[arg.curlevel] = p->mid[11];
+			//psidxs[arg.curlevel] = p->mid[11];
 			TMPpmap.Merge(curPMAP, p->pmap);
-			const SimArg narg{ uint16_t(arg.estCosts - arg.curEstCost), npf.estCost, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
-			//const SimArg narg{ nextEstCost, npf.estCost, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
+			const SimArg narg{ uint16_t(arg.estCosts - npf.estCost), -1, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 		#ifndef FIN
 			loopLVcnt[nextlevel]++;
 			loopcount++;
@@ -241,7 +231,7 @@ private:
 			{
 				if (npf.ecutCnt != 0 && narg.epcnt != 0)
 				{
-					if (narg.estCosts <= narg.RemainCost)
+					if (arg.estCosts <= narg.RemainCost)
 						arg.RemainCost = p->cost + fastDFSe<T>(&npf.epaths[0], &npf.epaths[npf.ecutCnt], dmdMap | DMDmask[p->toidx], narg);
 					else
 					{

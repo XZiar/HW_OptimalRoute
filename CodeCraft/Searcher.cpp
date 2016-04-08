@@ -255,6 +255,22 @@ void Searcher::Init()
 	}
 }
 
+void Searcher::ReValueEstCut(uint16_t objCost)
+{
+	if (costs[5] > objCost)
+	{
+		double percent = objCost * 1.0 / costs[5];
+		costs[5] = 0;
+		for (int a = 0; a <= demand.count; a++)
+		{
+			PathFirst &pf = *path1[demand.idNeed[a]];
+			pf.estCost *= percent;
+			costs[5] += pf.estCost;
+		}
+		printf("ReValue EstCost to %3d\n", costs[5]);
+	}
+}
+
 void Searcher::fastDFS(PointData::Out * __restrict po, const PointData::Out * __restrict poend, uint64_t dmdMap)
 {
 	for (; po < poend; po++)
@@ -393,7 +409,7 @@ uint16_t Searcher::fastDFSv256(PathData * __restrict p, const PathData * __restr
 		PathFirst &npf = *path1[p->to];
 		pstack[arg.curlevel] = p;//add go though
 		TMPpmap.Merge(curPMAP, p->pmap);
-		const SimArg narg{ 0, 0, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
+		const SimArg narg{ -1, -1, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 	#ifndef FIN
 		loopLVcnt[nextlevel]++;
 		loopcount++;
@@ -452,7 +468,7 @@ void Searcher::StepEnd(const uint16_t maxid)
 {
 	TMPpmap.Clean();
 	PathFirst *pf = path1[pmain.from];
-	SimArg arg{ costs[5], pf->estCost, 1000, 0, toEPcnt };
+	SimArg arg{ costs[5] - pf->estCost, -1, 1000, 0, toEPcnt };
 	//SimArg arg{ costs[5] - pf->estCost, pf->estCost, 1000, 0, toEPcnt };
 
 	if (maxid > 510)//>512
@@ -460,8 +476,9 @@ void Searcher::StepEnd(const uint16_t maxid)
 		cutLim_min = demand.count - 11;
 		printf("***try lim:%d\n", cutLim_min);
 	#ifdef FIN
-		arg.RemainCost = 640;
+		arg.RemainCost = 620;
 	#endif
+		ReValueEstCut(arg.RemainCost);
 		fastDFSv<PMap>(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
 	}
 	else if (maxid > 256)//>256
@@ -470,14 +487,15 @@ void Searcher::StepEnd(const uint16_t maxid)
 		//cutLim_min = demand.count - 11;
 		printf("***try lim:%d\n", cutLim_min);
 	#ifdef FIN
-		arg.RemainCost = 500;
+		arg.RemainCost = 470;
 	#endif
+		ReValueEstCut(arg.RemainCost);
 		fastDFSv<PMap512>(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
 	}
 	else//<256
 	{	
 	#ifdef FIN
-		arg.RemainCost = 300;
+		arg.RemainCost = 270;
 	#endif
 		fastDFSv256(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
 	}
