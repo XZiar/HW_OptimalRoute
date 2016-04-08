@@ -198,14 +198,6 @@ private:
 	}
 	template <typename T> uint16_t fastDFSe(PathData * __restrict pcur[], PathData * __restrict pend[], const uint64_t dmdMap, SimArg arg)//Ecut-VectorTest
 	{
-		if (arg.estCosts > arg.RemainCost)
-		{
-		#ifndef FIN
-			//loopLVcnt[nextlevel]++;
-			estCut++;
-		#endif
-			return arg.RemainCost;
-		}
 		const T curPMAP(TMPpmap);
 		const uint8_t nextlevel = arg.curlevel + 1;
 		for (; pcur < pend; pcur++)
@@ -248,7 +240,18 @@ private:
 			if (nextlevel != demand.count)
 			{
 				if (npf.ecutCnt != 0 && narg.epcnt != 0)
-					arg.RemainCost = p->cost + fastDFSe<T>(&npf.epaths[0], &npf.epaths[npf.ecutCnt], dmdMap | DMDmask[p->toidx], narg);
+				{
+					if (narg.estCosts <= narg.RemainCost)
+						arg.RemainCost = p->cost + fastDFSe<T>(&npf.epaths[0], &npf.epaths[npf.ecutCnt], dmdMap | DMDmask[p->toidx], narg);
+					else
+					{
+					#ifndef FIN
+						//loopLVcnt[nextlevel]++;
+						estCut++;
+					#endif
+					}
+				}
+					
 			}
 			else
 				arg.RemainCost = p->cost + fastDFSEND(&npf.paths[0], &npf.paths[npf.endcnt], narg);
