@@ -88,9 +88,9 @@ private:
 	uint64_t DMDmask[56];
 	struct SimArg
 	{
+		uint16_t estCosts, curEstCost;
 		uint16_t RemainCost;
 		uint8_t curlevel, epcnt;
-		uint16_t estCosts;
 	};
 	//int tkp = sizeof(SimArg);
 public:
@@ -185,7 +185,7 @@ private:
 			pstack[arg.curlevel] = p;//add go though
 			psidxs[arg.curlevel] = p->mid[11];
 			TMPpmap.Merge(curPMAP, p->pmap);
-			const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd), uint16_t(arg.estCosts - p->mid[11]) };
+			const SimArg narg{ uint16_t(arg.estCosts - arg.curEstCost), npf.estCost, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 		#ifndef FIN
 			loopLVcnt[nextlevel]++;
 			loopcount++;
@@ -228,7 +228,7 @@ private:
 			pstack[arg.curlevel] = (PathData *)p;//add go though
 			psidxs[arg.curlevel] = p->mid[11];
 			TMPpmap.Merge(curPMAP, p->pmap);
-			const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd), uint16_t(arg.estCosts - p->mid[11]) };
+			const SimArg narg{ uint16_t(arg.estCosts - arg.curEstCost), npf.estCost, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 		#ifndef FIN
 			loopLVcnt[nextlevel]++;
 			loopcount++;

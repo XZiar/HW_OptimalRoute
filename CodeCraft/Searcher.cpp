@@ -356,12 +356,12 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 			pf->hasEnd = 0x0;
 			pf->estCost = (pf->paths[0].cost + pf->paths[1].cost) / 2;
 		}
-		//pf->estCost = (pf->paths[b].cost * 2 + pf->paths[b + 1].cost * 3 + pf->paths[(pf->cnt + b - 1) / 2].cost) / 6;
+		pf->estCost = (pf->paths[b].cost * 2 + pf->paths[b + 1].cost * 3 + pf->paths[(pf->cnt + b - 1) / 2].cost) / 6;
 		costs[5] += pf->estCost;
-		for (uint8_t c = 0; c < pf->cnt; c++)
+		/*for (uint8_t c = 0; c < pf->cnt; c++)
 		{
 			pf->paths[c].mid[11] = pf->estCost;
-		}
+		}*/
 	}
 	printf("Total:p0:%3d,p1:%3d,pMid:%3d,pEnd:%3d\n", costs[0], costs[1], costs[2], costs[3]);
 	printf("Total Estimate:%3d\n", costs[5]);
@@ -385,7 +385,7 @@ uint16_t Searcher::fastDFSv256(PathData * __restrict p, const PathData * __restr
 		PathFirst &npf = *path1[p->to];
 		pstack[arg.curlevel] = p;//add go though
 		TMPpmap.Merge(curPMAP, p->pmap);
-		const SimArg narg{ uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
+		const SimArg narg{ 0, 0, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 	#ifndef FIN
 		loopLVcnt[nextlevel]++;
 		loopcount++;
@@ -444,7 +444,7 @@ void Searcher::StepEnd(const uint16_t maxid)
 {
 	TMPpmap.Clean();
 	PathFirst *pf = path1[pmain.from];
-	SimArg arg{ 1000, 0, toEPcnt, costs[5] };
+	SimArg arg{ costs[5], pf->estCost, 1000, 0, toEPcnt };
 
 	if (maxid > 510)//>512
 	{
