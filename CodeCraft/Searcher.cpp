@@ -342,11 +342,13 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 		pf->endcnt = b;
 		costs[0] += pf->paths[b].cost;
 		costs[1] += pf->paths[b+1].cost;
+		costs[2] += pf->paths[(pf->cnt + b - 1)/2].cost;
+		//costs[4] += pf->paths[pf->cnt - 1].cost;
 		if (b > 0 && a != demand.count)
 		{
 			pf->hasEnd = 0x1;
 			++toEPcnt;
-			costs[2] += pf->paths[0].cost;
+			costs[3] += pf->paths[0].cost;
 			pf->estCost = (pf->paths[b].cost + pf->paths[b + 1].cost + pf->paths[0].cost) / 3;
 		}
 		else
@@ -354,14 +356,15 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 			pf->hasEnd = 0x0;
 			pf->estCost = (pf->paths[0].cost + pf->paths[1].cost) / 2;
 		}
-		costs[3] += pf->estCost;
+		//pf->estCost = (pf->paths[b].cost * 2 + pf->paths[b + 1].cost * 3 + pf->paths[(pf->cnt + b - 1) / 2].cost) / 6;
+		costs[5] += pf->estCost;
 		for (uint8_t c = 0; c < pf->cnt; c++)
 		{
 			pf->paths[c].mid[11] = pf->estCost;
 		}
 	}
-	//printf("Total:p0:%3d,p1:%3d,pEnd:%3d\n", costs[0], costs[1], costs[2]);
-	printf("Total Estimate:%3d\n", costs[3]);
+	printf("Total:p0:%3d,p1:%3d,pMid:%3d,pEnd:%3d\n", costs[0], costs[1], costs[2], costs[3]);
+	printf("Total Estimate:%3d\n", costs[5]);
 }
 
 uint16_t Searcher::fastDFSv256(PathData * __restrict p, const PathData * __restrict pend, SimArg arg)
@@ -441,7 +444,7 @@ void Searcher::StepEnd(const uint16_t maxid)
 {
 	TMPpmap.Clean();
 	PathFirst *pf = path1[pmain.from];
-	SimArg arg{ 1000, 0, toEPcnt, costs[3] };
+	SimArg arg{ 1000, 0, toEPcnt, costs[5] };
 
 	if (maxid > 510)//>512
 	{

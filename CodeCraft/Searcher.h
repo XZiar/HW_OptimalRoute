@@ -140,7 +140,7 @@ public:
 	PointData points[600];
 	DemandData demand;
 	uint64_t loopLVcnt[59], estCut = 0, actCut = 0, VTestCnt = 0, loopcount = 0;
-	uint16_t costs[4] = { 0,0,0,0 };
+	uint16_t costs[6] = { 0,0,0,0,0,0 };
 	Searcher();
 	~Searcher();
 
