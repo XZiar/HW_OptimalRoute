@@ -363,6 +363,14 @@ void Searcher::Step1(uint8_t maxdepth, uint8_t maxwidth)
 			pf->paths[c].mid[11] = pf->estCost;
 		}*/
 	}
+	/*for (int a = 0; a <= demand.count; a++)
+	{
+		PathFirst *pf = path1[demand.idNeed[a]];
+		for (uint8_t c = pf->endcnt; c < pf->cnt; c++)
+		{
+			pf->paths[c].mid[11] = path1[pf->paths[c].to]->estCost;
+		}
+	}*/
 	printf("Total:p0:%3d,p1:%3d,pMid:%3d,pEnd:%3d\n", costs[0], costs[1], costs[2], costs[3]);
 	printf("Total Estimate:%3d\n", costs[5]);
 }
@@ -445,6 +453,7 @@ void Searcher::StepEnd(const uint16_t maxid)
 	TMPpmap.Clean();
 	PathFirst *pf = path1[pmain.from];
 	SimArg arg{ costs[5], pf->estCost, 1000, 0, toEPcnt };
+	//SimArg arg{ costs[5] - pf->estCost, pf->estCost, 1000, 0, toEPcnt };
 
 	if (maxid > 510)//>512
 	{

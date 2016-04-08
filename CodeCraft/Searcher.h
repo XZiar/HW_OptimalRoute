@@ -186,6 +186,7 @@ private:
 			psidxs[arg.curlevel] = p->mid[11];
 			TMPpmap.Merge(curPMAP, p->pmap);
 			const SimArg narg{ uint16_t(arg.estCosts - arg.curEstCost), npf.estCost, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
+			//const SimArg narg{ uint16_t(arg.estCosts - p->mid[11]), npf.estCost, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 		#ifndef FIN
 			loopLVcnt[nextlevel]++;
 			loopcount++;
@@ -197,6 +198,14 @@ private:
 	}
 	template <typename T> uint16_t fastDFSe(PathData * __restrict pcur[], PathData * __restrict pend[], const uint64_t dmdMap, SimArg arg)//Ecut-VectorTest
 	{
+		if (arg.estCosts > arg.RemainCost)
+		{
+		#ifndef FIN
+			//loopLVcnt[nextlevel]++;
+			estCut++;
+		#endif
+			return arg.RemainCost;
+		}
 		const T curPMAP(TMPpmap);
 		const uint8_t nextlevel = arg.curlevel + 1;
 		for (; pcur < pend; pcur++)
@@ -209,13 +218,15 @@ private:
 			#endif
 				break;//according to order, later ones cost more
 			}
-			if (arg.estCosts > arg.RemainCost)
+			/*const uint16_t nextEstCost = arg.estCosts - p->mid[11];
+			if (nextEstCost > arg.RemainCost)
 			{
 			#ifndef FIN
+				//loopLVcnt[nextlevel]++;
 				estCut++;
 			#endif
 				break;
-			}
+			}*/
 		#ifndef FIN
 			VTestCnt++;
 		#endif
@@ -229,6 +240,7 @@ private:
 			psidxs[arg.curlevel] = p->mid[11];
 			TMPpmap.Merge(curPMAP, p->pmap);
 			const SimArg narg{ uint16_t(arg.estCosts - arg.curEstCost), npf.estCost, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
+			//const SimArg narg{ nextEstCost, npf.estCost, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 		#ifndef FIN
 			loopLVcnt[nextlevel]++;
 			loopcount++;
