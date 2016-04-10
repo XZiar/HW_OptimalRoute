@@ -507,8 +507,8 @@ void Searcher::StepEnd(const uint16_t maxid)
 	#ifdef FIN
 		//arg.RemainCost = 270;
 	#endif
-		if(maxid < 64)
-			arg.RemainCost *= 2;
+		if (maxid < 64)
+			arg.RemainCost = max(16, arg.RemainCost*1.2);
 		fastDFSv256(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
 	}
 }
