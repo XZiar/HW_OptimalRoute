@@ -93,7 +93,7 @@ private:
 		uint8_t curlevel, epcnt;
 	};
 	int tkp = sizeof(SimArg);
-	void ReValueEstCut(uint16_t objCost);
+	double ReValueEstCut(uint16_t objCost);
 public:
 	static const uint16_t pPERpf = 320;
 	struct _MM_ALIGN32 PathFirst
@@ -153,6 +153,7 @@ private:
 	{
 		const T curPMAP(TMPpmap);
 		const uint8_t nextlevel = arg.curlevel + 1;
+		EstCostPos[nextlevel] = &arg.estCosts;
 		if (arg.curlevel == cutLim_min)
 		{//early cut
 			for (uint8_t a = 0; a < demand.count; a++)
@@ -186,7 +187,7 @@ private:
 			pstack[arg.curlevel] = p;//add go though
 			psidxs[arg.curlevel] = p->mid[11];
 			TMPpmap.Merge(curPMAP, p->pmap);
-			const SimArg narg{ uint16_t(arg.estCosts - npf.estCost), -1, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
+			const SimArg narg{ uint16_t(arg.estCosts - npf.estCost), 0xffff, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 		#ifndef FIN
 			loopLVcnt[nextlevel]++;
 			loopcount++;
@@ -200,6 +201,7 @@ private:
 	{
 		const T curPMAP(TMPpmap);
 		const uint8_t nextlevel = arg.curlevel + 1;
+		EstCostPos[nextlevel] = &arg.estCosts;
 		for (; pcur < pend; pcur++)
 		{
 			const PathData * __restrict p = *pcur;
@@ -222,7 +224,7 @@ private:
 			pstack[arg.curlevel] = (PathData *)p;//add go though
 			//psidxs[arg.curlevel] = p->mid[11];
 			TMPpmap.Merge(curPMAP, p->pmap);
-			const SimArg narg{ uint16_t(arg.estCosts - npf.estCost), -1, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
+			const SimArg narg{ uint16_t(arg.estCosts - npf.estCost), 0xffff, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 		#ifndef FIN
 			loopLVcnt[nextlevel]++;
 			loopcount++;

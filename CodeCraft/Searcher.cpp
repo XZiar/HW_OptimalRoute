@@ -255,9 +255,9 @@ void Searcher::Init()
 	}
 }
 
-void Searcher::ReValueEstCut(uint16_t objCost)
+double Searcher::ReValueEstCut(uint16_t objCost)
 {
-	if (costs[5] > objCost)
+	//if (costs[5] < objCost)
 	{
 		double percent = objCost * 1.0 / costs[5];
 		costs[5] = 0;
@@ -268,7 +268,9 @@ void Searcher::ReValueEstCut(uint16_t objCost)
 			costs[5] += pf.estCost;
 		}
 		printf("ReValue EstCost to %3d\n", costs[5]);
+		return percent;
 	}
+	return -1.0;
 }
 
 void Searcher::fastDFS(PointData::Out * __restrict po, const PointData::Out * __restrict poend, uint64_t dmdMap)
@@ -409,7 +411,7 @@ uint16_t Searcher::fastDFSv256(PathData * __restrict p, const PathData * __restr
 		PathFirst &npf = *path1[p->to];
 		pstack[arg.curlevel] = p;//add go though
 		TMPpmap.Merge(curPMAP, p->pmap);
-		const SimArg narg{ -1, -1, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
+		const SimArg narg{ 0xffff, 0xffff, uint16_t(arg.RemainCost - p->cost), nextlevel, uint8_t(arg.epcnt - npf.hasEnd) };
 	#ifndef FIN
 		loopLVcnt[nextlevel]++;
 		loopcount++;
@@ -450,7 +452,7 @@ uint16_t Searcher::fastDFSEND(PathData * __restrict p, const PathData * __restri
 void Searcher::FormRes()
 {
 	ResData res = ResData();
-	for (int a = 0; a <= demand.count; a++)
+	for (uint8_t a = 0; a <= demand.count; a++)
 	{
 		PathData &p = *pstack[a];
 		res.cost += p.cost;
@@ -462,13 +464,22 @@ void Searcher::FormRes()
 	}
 	//printf("\n");
 	Util::WriteFile(&res);
+	{
+		double percent = ReValueEstCut(res.cost);
+		if (percent > 0)
+		{//reset estCost
+			for (uint8_t a = 1; a <= demand.count; a++)
+				(*EstCostPos[a]) *= percent;
+			printf("Reset Over.\n");
+		}
+	}
 }
 
 void Searcher::StepEnd(const uint16_t maxid)
 {
 	TMPpmap.Clean();
 	PathFirst *pf = path1[pmain.from];
-	SimArg arg{ costs[5] - pf->estCost, -1, 1000, 0, toEPcnt };
+	SimArg arg{ costs[5] - pf->estCost, 0xffff, 1000, 0, toEPcnt };
 	//SimArg arg{ costs[5] - pf->estCost, pf->estCost, 1000, 0, toEPcnt };
 
 	if (maxid > 510)//>512
@@ -479,6 +490,7 @@ void Searcher::StepEnd(const uint16_t maxid)
 		arg.RemainCost = 620;
 	#endif
 		ReValueEstCut(arg.RemainCost);
+		arg.estCosts = costs[5] - pf->estCost;
 		fastDFSv<PMap>(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
 	}
 	else if (maxid > 256)//>256
@@ -490,6 +502,7 @@ void Searcher::StepEnd(const uint16_t maxid)
 		arg.RemainCost = 470;
 	#endif
 		ReValueEstCut(arg.RemainCost);
+		arg.estCosts = costs[5] - pf->estCost;
 		fastDFSv<PMap512>(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
 	}
 	else//<256
