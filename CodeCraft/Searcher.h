@@ -235,13 +235,14 @@ private:
 				{
 					if (arg.estCosts <= narg.RemainCost)
 						arg.RemainCost = p->cost + fastDFSe<T>(&npf.epaths[0], &npf.epaths[npf.ecutCnt], dmdMap | DMDmask[p->toidx], narg);
+				#ifndef FIN
 					else
 					{
-					#ifndef FIN
+					
 						//loopLVcnt[nextlevel]++;
 						estCut++;
-					#endif
 					}
+				#endif
 				}
 					
 			}
