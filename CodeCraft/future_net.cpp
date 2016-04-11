@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
 		w1 = uint16_t(sqrt(linknum * dmdnum * 1.0) / 2.4);
 		w2 = uint16_t(dmdnum * 4.8);
 		width = max(w1, w2);
-		width = min(width, 160);
+		width = min(width, 120);
 	}
 	printf("Try depth %hd and width %hd\n", depth, width);
 

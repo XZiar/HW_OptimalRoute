@@ -485,7 +485,7 @@ void Searcher::StepEnd(const uint16_t maxid)
 
 	if (maxid > 510)//>512
 	{
-		cutLim_min = demand.count - 11;
+		cutLim_min = demand.count - 12;
 		printf("***try lim:%d\n", cutLim_min);
 	#ifdef FIN
 		//arg.RemainCost = 620;
@@ -494,7 +494,7 @@ void Searcher::StepEnd(const uint16_t maxid)
 	}
 	else if (maxid > 256)//>256
 	{
-		cutLim_min = demand.count - 14 + maxwide / 50;// arg.RemainCost = 1000;
+		cutLim_min = demand.count - 15 + maxwide / 32;// arg.RemainCost = 1000;
 		//cutLim_min = demand.count - 11;
 		printf("***try lim:%d\n", cutLim_min);
 	#ifdef FIN
