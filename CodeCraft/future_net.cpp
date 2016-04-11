@@ -123,8 +123,10 @@ int main(int argc, char *argv[])
 		uint16_t w1, w2, w3;
 		w1 = uint16_t(sqrt(linknum * dmdnum * 1.0) / 2.4);
 		w2 = uint16_t(dmdnum * 4.8);
+		if (w2 > 72)
+			w2 = uint16_t(w2 / 1.2);
 		width = max(w1, w2);
-		width = min(width, 120);
+		width = min(width, 95);
 	}
 	printf("Try depth %hd and width %hd\n", depth, width);
 

@@ -98,8 +98,8 @@ public:
 	static const uint16_t pPERpf = 320;
 	struct _MM_ALIGN32 PathFirst
 	{
-		PathData paths[162];
-		PathData *epaths[160];
+		PathData paths[96];
+		PathData *epaths[96];
 		uint16_t from,
 			cnt = 0,
 			ecutCnt,
