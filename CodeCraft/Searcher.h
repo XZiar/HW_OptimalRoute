@@ -149,6 +149,10 @@ public:
 	void Step1(uint8_t maxdepth, uint8_t maxwidth);
 	void StepEnd(const uint16_t maxid);
 private:
+	
+	void fastBFS(SimArg arg);
+
+
 	template <typename T> uint16_t fastDFSv(PathData * __restrict p, const PathData * __restrict pend, SimArg arg)//VectorTest
 	{
 		const T curPMAP(TMPpmap);
@@ -251,5 +255,19 @@ private:
 		}
 		return arg.RemainCost;//refresh lastCost
 	}
+
+
+
+	struct PathPart
+	{
+		PMap curPMAP;
+		PathData *pstack[51];
+		SimArg arg;
+		bool operator<(const PathPart &pp) const
+		{
+			return arg.RemainCost == pp.arg.RemainCost ? arg.estCosts < pp.arg.estCosts : arg.RemainCost < pp.arg.RemainCost;
+		}
+	} pathB[1048576];
+	uint64_t jkl = sizeof(pathB);
 };
 

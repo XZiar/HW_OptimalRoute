@@ -449,6 +449,72 @@ uint16_t Searcher::fastDFSEND(PathData * __restrict p, const PathData * __restri
 }
 
 
+void Searcher::fastBFS(SimArg arg)
+{
+	uint32_t curIDX = 0, maxIDX = 1;
+	uint16_t minCost = arg.RemainCost;
+
+	pathB[0].arg = { costs[5], pmain.from, 0, 0, toEPcnt };
+
+	for (; curIDX < maxIDX;)
+	{
+		PathPart cur = pathB[curIDX];
+		PathFirst *pf = path1[cur.arg.empty];
+		
+		if (cur.arg.curlevel < demand.count)
+		{
+			cur.arg.estCosts -= pf->estCost;
+			for (uint8_t a = pf->endcnt; a < pf->cnt; a++)
+			{
+				PathData &p = pf->paths[a];
+				if (!cur.curPMAP.Test(p.pmap))//has overlap points
+					continue;
+				PathPart &pp = pathB[maxIDX++];
+				//merge
+				pp.curPMAP.Merge(cur.curPMAP, p.pmap);
+				memcpy(pp.pstack, cur.pstack, sizeof(cur.pstack));
+				pp.pstack[cur.arg.curlevel] = &p;// add stack
+				pp.arg.curlevel = cur.arg.curlevel + 1;
+				pp.arg.estCosts = cur.arg.estCosts;
+				pp.arg.RemainCost = cur.arg.RemainCost + p.cost;//add cost
+				pp.arg.empty = p.to;
+			}
+			curIDX++;
+			sort(pathB + curIDX, pathB + maxIDX);
+			if (maxIDX > 1024000)
+				printf("overflow!\n");
+		}
+		else
+		{//to END
+			int16_t leftCost = minCost - cur.arg.RemainCost;
+			for (uint8_t a = 0; a < pf->endcnt; a++)
+			{
+				PathData &p = pf->paths[a];
+				if (leftCost < p.cost)//cost too much
+					break;//according to order, later ones cost more
+				if (!cur.curPMAP.Test(p.pmap))//has overlap points
+					continue;
+
+				//final step,find a shorter route
+				memcpy(pstack, cur.pstack, sizeof(cur.pstack));
+				pstack[cur.arg.curlevel] = &p;
+				//psidxs[arg.curlevel] = p->mid[11];
+				FormRes();
+
+				minCost = cur.arg.RemainCost + p.cost;
+				PathPart tmpOBJ;
+				tmpOBJ.arg.RemainCost = minCost;
+				maxIDX = upper_bound(pathB + curIDX + 1, pathB + maxIDX, tmpOBJ) - pathB;
+				break;//according to order, later ones cost more
+			}
+			curIDX++;
+		}
+		
+
+	}
+}
+
+
 void Searcher::FormRes()
 {
 	ResData res = ResData();
@@ -490,7 +556,8 @@ void Searcher::StepEnd(const uint16_t maxid)
 	#ifdef FIN
 		//arg.RemainCost = 620;
 	#endif
-		fastDFSv<PMap>(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
+		fastBFS(arg);
+		//fastDFSv<PMap>(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
 	}
 	else if (maxid > 256)//>256
 	{
@@ -500,7 +567,8 @@ void Searcher::StepEnd(const uint16_t maxid)
 	#ifdef FIN
 		//arg.RemainCost = 470;
 	#endif
-		fastDFSv<PMap512>(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
+		fastBFS(arg);
+		//fastDFSv<PMap512>(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
 	}
 	else//<256
 	{	
@@ -508,7 +576,8 @@ void Searcher::StepEnd(const uint16_t maxid)
 		//arg.RemainCost = 270;
 	#endif
 		arg.RemainCost = max(16, arg.RemainCost*1.25);
-		fastDFSv256(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
+		fastBFS(arg);
+		//fastDFSv256(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
 	}
 }
 
