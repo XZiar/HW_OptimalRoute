@@ -481,7 +481,7 @@ void Searcher::StepEnd(const uint16_t maxid)
 	PathFirst *pf = path1[pmain.from];
 	SimArg arg{ costs[5] - pf->estCost, 0xffff, 1000, 0, toEPcnt };
 	//SimArg arg{ costs[5] - pf->estCost, pf->estCost, 1000, 0, toEPcnt };
-	arg.RemainCost = costs[5] + costs[5] / demand.count;
+	arg.RemainCost = costs[5] + (costs[5] / demand.count) * 2;
 
 	if (maxid > 510)//>512
 	{
@@ -507,8 +507,7 @@ void Searcher::StepEnd(const uint16_t maxid)
 	#ifdef FIN
 		//arg.RemainCost = 270;
 	#endif
-		if (maxid < 64)
-			arg.RemainCost = max(16, arg.RemainCost*1.2);
+		arg.RemainCost = max(16, arg.RemainCost*1.25);
 		fastDFSv256(&pf->paths[pf->endcnt], &pf->paths[pf->cnt], arg);
 	}
 }
