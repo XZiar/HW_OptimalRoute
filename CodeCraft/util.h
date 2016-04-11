@@ -40,6 +40,7 @@ class Util
 	static uint64_t t_begin;
 public:
 	static TOPOData topo[4800];
+	static bool isGetAns;
 	static void Init(const char * fname);
 
 	static uint64_t GetElapse();

@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
 		w1 = uint16_t(sqrt(linknum * dmdnum * 1.0) / 2.4);
 		w2 = uint16_t(dmdnum * 4.8);
 		if (w2 > 72)
-			w2 = uint16_t(w2 / 1.2);
+			w2 = uint16_t(w2 / 1.28);
 		width = max(w1, w2);
 		width = min(width, 95);
 	}
@@ -165,6 +165,8 @@ int main(int argc, char *argv[])
 
 	searcher.StepEnd(maxid);
 	printf("Totol: %lld ms\n", Util::GetElapse());
+	if (!Util::isGetAns)
+		Util::WriteFile();
 	if(isStay)
 		getchar();
 	return 0;

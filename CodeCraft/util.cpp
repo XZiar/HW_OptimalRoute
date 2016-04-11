@@ -5,13 +5,13 @@
 using namespace std::chrono;
 
 char Util::outfname[256];
+bool Util::isGetAns = false;
 uint64_t Util::t_begin;
 TOPOData Util::topo[4800];
 void Util::Init(const char * fname)
 {
 	t_begin = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 	strcpy(outfname, fname);
-	WriteFile();
 }
 
 
@@ -99,6 +99,7 @@ int16_t Util::WriteFile(const ResData * path)
 		fprintf(fp, "NA\n");
 	else
 	{
+		isGetAns = true;
 		printf("write ans cost %3d with %3d links at %lldms\n", path->cost, path->count, GetElapse());
 		/*for (int a = path->count; a-- > 0;)
 			fprintf(fp, a == 0? "%d\n" : "%d|", path->idLink[a]);*/
