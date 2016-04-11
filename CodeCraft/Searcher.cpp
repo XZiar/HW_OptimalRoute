@@ -481,7 +481,7 @@ void Searcher::StepEnd(const uint16_t maxid)
 	PathFirst *pf = path1[pmain.from];
 	SimArg arg{ costs[5] - pf->estCost, 0xffff, 1000, 0, toEPcnt };
 	//SimArg arg{ costs[5] - pf->estCost, pf->estCost, 1000, 0, toEPcnt };
-	arg.RemainCost = costs[5] * 1.1;
+	arg.RemainCost = costs[5] + costs[5] / demand.count;
 
 	if (maxid > 510)//>512
 	{
@@ -494,7 +494,7 @@ void Searcher::StepEnd(const uint16_t maxid)
 	}
 	else if (maxid > 256)//>256
 	{
-		cutLim_min = demand.count - 14 + maxwide / 50;
+		cutLim_min = demand.count - 14 + maxwide / 50;// arg.RemainCost = 1000;
 		//cutLim_min = demand.count - 11;
 		printf("***try lim:%d\n", cutLim_min);
 	#ifdef FIN

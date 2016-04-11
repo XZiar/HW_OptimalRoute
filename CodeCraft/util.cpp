@@ -28,8 +28,8 @@ int16_t Util::ReadFile(const char* fname, PointData * points, uint16_t &maxid)
 
 	int16_t cnt = 0;
 	int16_t idLink, idSrc, idDest, cost;
-	for (; fscanf(fp, "%hd,%hd,%hd,%hd", &idLink, &idDest, &idSrc, &cost) != EOF; )
-	//for (; fscanf(fp, "%hd,%hd,%hd,%hd", &idLink, &idSrc, &idDest, &cost) != EOF; )
+	//for (; fscanf(fp, "%hd,%hd,%hd,%hd", &idLink, &idDest, &idSrc, &cost) != EOF; )
+	for (; fscanf(fp, "%hd,%hd,%hd,%hd", &idLink, &idSrc, &idDest, &cost) != EOF; )
 	{
 		topo[idLink].idSrc = idSrc, topo[idLink].idDest = idDest, topo[idLink].cost = cost;
 		PointData &p = points[idSrc];
@@ -65,8 +65,8 @@ int16_t Util::ReadFile(const char* fname, DemandData &dmd)
 	int16_t cnt = 0;
 	memset(&dmd, 0, sizeof(dmd));
 	char str[512];
-	fscanf(fp, "%hd,%hd,", &dmd.idTo, &dmd.idFrom);
-	//fscanf(fp, "%hd,%hd,", &dmd.idFrom, &dmd.idTo);
+	//fscanf(fp, "%hd,%hd,", &dmd.idTo, &dmd.idFrom);
+	fscanf(fp, "%hd,%hd,", &dmd.idFrom, &dmd.idTo);
 	fscanf(fp, "%s", str);
 	uint16_t pid = 0;
 	for (int a = 0; a < strlen(str); a++)
@@ -100,10 +100,10 @@ int16_t Util::WriteFile(const ResData * path)
 	else
 	{
 		printf("write ans cost %3d with %3d links at %lldms\n", path->cost, path->count, GetElapse());
-		for (int a = path->count; a-- > 0;)
-			fprintf(fp, a == 0? "%d\n" : "%d|", path->idLink[a]);
-		/*for (int a = 0; a < path->count; a++)
-			fprintf(fp, path->count - a == 1 ? "%d\n" : "%d|", path->idLink[a]);*/
+		/*for (int a = path->count; a-- > 0;)
+			fprintf(fp, a == 0? "%d\n" : "%d|", path->idLink[a]);*/
+		for (int a = 0; a < path->count; a++)
+			fprintf(fp, path->count - a == 1 ? "%d\n" : "%d|", path->idLink[a]);
 	}
 	fclose(fp);
 	return 0;
